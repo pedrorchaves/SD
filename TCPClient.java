@@ -4,7 +4,8 @@ import java.io.File;
 import java.io.FileNotFoundException;
 
 import java.net.*;
-import java.util.Scanner;
+
+import java.util.*;
 
 import javax.sound.sampled.SourceDataLine;
 
@@ -46,18 +47,16 @@ public class TCPClient {
 				if (data.equals("Authenticated")) {
 					System.out.println("\nAuthenticated");
 					break;
-				}
-				else if (data.equals("This user is already Online.")){
+				} else if (data.equals("This user is already Online.")) {
 					System.out.println("This user is already Online.\nYou can't have two sessions at once.");
 					return;
 				}
 				System.out.println("\nCouldn't authenticate, please try again.");
 			}
-			
 
 			// 3o passo
 			try (Scanner sc = new Scanner(System.in)) {
-				while (true) { //while consola
+				while (true) { // while consola
 					// READ FROM SOCKET
 					String consola = in.readUTF();
 					System.out.println(consola);
@@ -68,22 +67,22 @@ public class TCPClient {
 					// WRITE INTO THE SOCKET
 					out.writeUTF(texto);
 
-					switch(texto){
-						case("1") -> {
-							while(true){
+					switch (texto) {
+						case ("1") -> {
+							while (true) {
 								// READ request
 								String data = in.readUTF();
 
-								if(data.equals("-1")){
+								if (data.equals("-1")) {
 									System.out.println("\nNao estas autenticado!");
 									break;
-								}else if(data.equals("0")){
+								} else if (data.equals("0")) {
 									System.out.println("\nPassword Changed!");
 									break;
 								}
-			
+
 								// DISPLAY WHAT WAS READ
-								System.out.println("Receive: " + data);
+								System.out.println(data);
 
 								// READ STRING FROM KEYBOARD
 								String newPass = sc.nextLine();
@@ -93,7 +92,91 @@ public class TCPClient {
 							}
 							break;
 						}
-						case("9") -> {
+						case ("3") -> {
+							String data = in.readUTF();
+							File fileData = new File(data);
+							if (data.equals("-1")) {
+								System.out.println("\nNao estas autenticado!");
+							} else {
+								String[] lista = fileData.list();
+								System.out.println("Ficheiros na diretoria:");
+								if (lista.length >= 1) {
+									for (String ficheiro : lista) {
+										System.out.println(ficheiro);
+									}
+
+								} else {
+									System.out.println("This directory is Empty, like my soul :)");
+								}
+
+							}
+						}
+						case ("4") -> {
+							String len = in.readUTF();
+							int lenI = Integer.parseInt(len);
+							ArrayList<String> directories = new ArrayList<>();
+							for (int i = 0; i < lenI; i++) {
+								String data = in.readUTF();
+								directories.add(data);
+								System.out.println(i + " - " + data);
+							}
+							System.out.println(lenI + " - Go back on the directories");
+
+							String opt = sc.nextLine();
+							out.writeUTF(opt);
+							String fine = in.readUTF();
+							if (fine.equals("-1")) {
+								System.out.println("You can't go back from here!!");
+							} else {
+								System.out.println("Nice Move!!");
+							}
+						}
+						case ("5") -> {
+							String data = in.readUTF();
+							File fileData = new File(data);
+							if (data.equals("-1")) {
+								System.out.println("\nNao estas autenticado!");
+							} else {
+								String[] lista = fileData.list();
+								System.out.println("Ficheiros na diretoria:");
+								for (String ficheiro : lista) {
+									System.out.println(ficheiro);
+								}
+
+							}
+						}
+						case ("6") -> {
+							String len = in.readUTF();
+							int lenI = Integer.parseInt(len);
+							ArrayList<String> directories = new ArrayList<>();
+							for (int i = 0; i < lenI; i++) {
+								String data = in.readUTF();
+								directories.add(data);
+								System.out.println(i + " - " + data);
+							}
+							System.out.println(lenI + " - Go back on the directories");
+							System.out.println((lenI + 1) + " - Write directories");
+
+							String opt = sc.nextLine();
+							out.writeUTF(opt);
+							String fine = in.readUTF();
+							if (fine.equals("-1")) {
+								System.out.println("You can't go back from here!!");
+							} else if (fine.equals("1")) {
+								System.out.println("Escreva a diretoria.");
+								String direct = sc.nextLine();
+								out.writeUTF(direct);
+								String doesItExist = in.readUTF();
+								if (doesItExist.equals("0")) {
+									System.out.println("High risk, low reward!-Elden Ring");
+								} else {
+									System.out.println("To bad!");
+								}
+							} else {
+								System.out.println("Nice Move!!");
+							}
+						}
+						case ("0") -> {
 							System.out.println("Logged out successfully");
 							System.exit(0);
 						}
@@ -101,7 +184,9 @@ public class TCPClient {
 				}
 			}
 
-		} catch (UnknownHostException e) {
+		} catch (
+
+		UnknownHostException e) {
 			System.out.println("Sock:" + e.getMessage());
 		} catch (EOFException e) {
 			System.out.println("EOF:" + e.getMessage());
