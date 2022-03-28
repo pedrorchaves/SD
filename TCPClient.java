@@ -14,9 +14,9 @@ import javax.sound.sampled.SourceDataLine;
 import java.io.*;
 
 public class TCPClient {
-	private static int serversocket = 6000;
+	private static int serverPort = 6000;
 
-	public static void main(String args[]) throws RemoteException {
+	public static void main(String args[]) throws RemoteException, NotBoundException {
 		Scanner sca = new Scanner(System.in);
 		// args[0] <- hostname of destination
 		if (args.length == 0) {
@@ -25,11 +25,11 @@ public class TCPClient {
 		}
 		if(args[0].equals("admin")){
 			System.out.println("Hello Admin!");
-			Admin admin = (Admin) LocateRegistry.getRegistry(6000).lookup("admin");
+			Admin admin = (Admin) LocateRegistry.getRegistry(1099).lookup("admin");
 			try (Scanner sc = new Scanner(System.in)) {
 				while (true) { // while consola
 					// READ FROM SOCKET
-					String consola = "\nAdmin Console\n\n------------------------------------\n\n1: Register new user\n";
+					String consola = "\nAdmin Console\n\n------------------------------------\n\n1: Registar novo utilizador\n2: Listar as directorias/ficheiros por utilizador\n3: Configurar o mecanismo de failover\n4: Listar detalhes sobre o armazenamento\n5: Validar a replicação dos dados entre os vários servidores\n0: Sair\n\n------------------------------------\n\n";
 					System.out.println(consola);
 
 					// READ STRING FROM KEYBOARD
@@ -54,19 +54,46 @@ public class TCPClient {
 							System.out.println("Validade do CC: ");
 							String ValCC = sca.nextLine();
 							String dados = Username + " " + Pass + " " + Dep + " " + Fac + " " + Tel + " " + Mor + " " + NumCC + " " + ValCC;
-							String reg = admin.register(dados, "auth.txt");
+							String reg = admin.register(dados);
+							System.out.println(reg);
+						} case("2") ->{
+							ArrayList<String> Usernames = new ArrayList<>();
+							// Reading Usernames and Passwords from File
+							File authentication = new File("auth.txt");
+							try (Scanner readFile = new Scanner(authentication)) {
+								while (readFile.hasNextLine()) {
+									String Line = readFile.nextLine();
+									String[] arrayLine = Line.split(" ");
+									Usernames.add(arrayLine[0]);
+								}
+							} catch (FileNotFoundException e) {
+								System.out.println("hehe wrong filename");
+							}
+							if(Usernames.size() < 1){
+								System.out.println("No users!");
+							}
+							for(int i = 0; i < Usernames.size();i++){
+								System.out.println(i + " -" + Usernames.get(i));
+							}
+							String User = sca.nextLine();
+							int User1 = Integer.parseInt(User);
+
+							String out = admin.directories_print(Usernames, User1);
+							System.out.println(out);
+						} case("0") -> {
+							System.out.println("Logged out successfully");
+							System.exit(0);
 						}
 					}
 				}
-			}
-			catch (EOFException e) {
-				System.out.println("Admin logged out, using CTRL + C");
-			} catch (IOException e) {
+			}catch(FileNotFoundException e) {
+				System.out.println("File not found!");
+			}catch (IOException e) {
 				System.out.println("Admin logged out\nNice!");
 			}
 		}else{
 			// 1o passo - criar socket
-			try (Socket s = new Socket(args[0], serversocket)) {
+			try (Socket s = new Socket(args[0], serverPort)) {
 				System.out.println("SOCKET=" + s);
 
 				// 2o passo

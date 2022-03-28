@@ -5,6 +5,7 @@
 import java.io.FileNotFoundException;
 import java.lang.*;
 import java.net.*;
+import java.nio.file.StandardOpenOption;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.Scanner;
@@ -25,28 +26,38 @@ public class TCPServer extends UnicastRemoteObject implements Admin {
 		super();
 	}
 
-    public String register(String dados, File FileName) throws RemoteException {
-		try (FileWriter writerOfFiles = new FileWriter(FileName)) {
+    public String register(String dados) throws RemoteException {
+        String currentPath = System.getProperty("user.dir");
+        String[] temp = dados.split(" ");
+        currentPath = currentPath + "\\directories\\" + temp[0] + "\\home";
+        File FileName = new File("auth.txt");
+		try (FileWriter writerOfFiles = new FileWriter(FileName, true)) {
             writerOfFiles.write(dados + "\n");
             writerOfFiles.close();
+            new File(currentPath).mkdirs();
+            return "Sucess!";
         } catch (Exception e) {
             System.out.println("Error when writing to File.");
             return "Error when writing to File.";
         }
-		return "Sucess!";
 	}
 
-	public void directories_print(String directory) throws RemoteException {
-        File fileData = new File(directory);
-        String[] lista = fileData.list();
-        System.out.println("Ficheiros na diretoria:");
+	public String directories_print(ArrayList<String> Usernames,int User1) throws RemoteException {
+        
+        String currentPath = System.getProperty("user.dir");
+        String current = "";
+        File file = new File(currentPath + "\\directories\\" + Usernames.get(User1) + "\\home");
+        String[] lista = file.list();
+        String out = "Ficheiros na diretoria " + Usernames.get(User1)+ "\\home:\n";
         if (lista.length >= 1) {
             for (String ficheiro : lista) {
-                System.out.println(ficheiro);
-            }
+                out = out + ficheiro + "\n";
+            }   
+
         } else {
             System.out.println("This directory is Empty, like my soul :)");
         }
+        return out;
 	}
 
 	public void failover_stats(int n, int time) throws RemoteException {
@@ -63,7 +74,7 @@ public class TCPServer extends UnicastRemoteObject implements Admin {
 
         try {
 			Admin h = new TCPServer();
-			Registry r = LocateRegistry.createRegistry(6000);
+			Registry r = LocateRegistry.createRegistry(1099);
 			r.rebind("admin", h);
 			System.out.println("RMI Server ready.");
 		} catch (RemoteException re) {
@@ -170,17 +181,24 @@ class Connection extends Thread {
     }
 
     public static String Authenticate(String UserPass, ArrayList<String> Users, ArrayList<String> OnlineUsers) {
-        if (Users.indexOf(UserPass) == -1) {
-            return "Failed";
-        }
+    
 
         String[] arrayString = UserPass.split(" ");
-        username = arrayString[0];
 
-        if (OnlineUsers.indexOf(username) == -1) {
-            return "Authenticated";
+        for(int i = 0; i < Users.size(); i++){
+            String[] toCompare = Users.get(i).split(" ");
+            if(toCompare[0].equals(arrayString[0]) && (toCompare[1].equals(arrayString[1]))){
+                username = arrayString[0];
+
+                if (OnlineUsers.indexOf(username) == -1) {
+                    return "Authenticated";
+                }       
+                return "This user is already Online.";
+            }
+            
         }
-        return "This user is already Online.";
+        return "That user is not registered. Please speak with an admin.";
+        
     }
 
     // =============================

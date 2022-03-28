@@ -1,3 +1,4 @@
-david 12345
-chaves 54321
-pedro 111112
+david 123 dei uc 2 fa 2 2
+chaves 123 dei uc 3 d 3 3
+pedro alalal dei uc 4 g 4 4
+fabio lala a a 2 2 1 1
