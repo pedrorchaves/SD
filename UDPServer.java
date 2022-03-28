@@ -3,22 +3,22 @@ package sockets;
 import java.net.*;
 import java.io.*;
 
-public class UDPServer{
+public class UDPServer {
 	private static int port = 6789;
 	private static int out = -1;
 
-	public static void main(String args[]) throws InterruptedException{
+	public static void main(String args[]) throws InterruptedException {
 		try (DatagramSocket aSocket = new DatagramSocket(port)) {
-			
+
 			System.out.println("Socket Datagram à escuta no porto " + port);
-			while(true){
-				byte[] buffer = new byte[1000]; 			
+			while (true) {
+				byte[] buffer = new byte[1000];
 				DatagramPacket request = new DatagramPacket(buffer, buffer.length);
 				aSocket.receive(request);
 				String s = new String(request.getData(), 0, request.getLength());
 				System.out.println("Server Recebeu: " + s);
-				DatagramPacket reply = new DatagramPacket(request.getData(), 
-				request.getLength(), request.getAddress(), request.getPort());
+				DatagramPacket reply = new DatagramPacket(request.getData(),
+						request.getLength(), request.getAddress(), request.getPort());
 				aSocket.send(reply);
 			}
 		} catch (SocketException e) {

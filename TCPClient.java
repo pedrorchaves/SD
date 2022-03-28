@@ -91,7 +91,47 @@ public class TCPClient {
 								out.writeUTF(newPass);
 							}
 							break;
-						}
+						} /*
+							 * case ("2") -> {
+							 * System.out.
+							 * println("Que servidor deseja alterar?\n0 - Principal \n1 - Secundario\n");
+							 * String resp = sc.nextLine();
+							 * out.writeUTF(resp);
+							 * while(true){
+							 * System.out.
+							 * println("O que quer alterar?\n0 - Endereco IP\n1 - Porto\n2 - IP e Porto\n3 - Nenhum\n"
+							 * );
+							 * String opt = sc.nextLine();
+							 * out.writeUTF(opt);
+							 * if(opt.equals("0")){
+							 * System.out.println("Escreva o novo IP\n");
+							 * String newIP = sc.nextLine();
+							 * out.writeUTF(newIP);
+							 * }else if(opt.equals("1")){
+							 * System.out.println("Escreva o novo Porto\n");
+							 * String newIP = sc.nextLine();
+							 * out.writeUTF(newIP);
+							 * }else if(opt.equals("2")){
+							 * System.out.println("Escreva IP:Porto\n");
+							 * String newIP = sc.nextLine();
+							 * out.writeUTF(newIP);
+							 * }else if(opt.equals("3")){
+							 * System.out.println("Leaving already\n");
+							 * break;
+							 * }else{
+							 * System.out.println("Invalid Option NOOB!");
+							 * continue;
+							 * }
+							 * String check = in.readUTF();
+							 * if(check.equals("-1")){
+							 * System.out.println("Thats not an IPv4!!");
+							 * }else if(check.equals("0")){
+							 * System.out.println("Got it!");
+							 * break;
+							 * }
+							 * }
+							 * }
+							 */
 						case ("3") -> {
 							String data = in.readUTF();
 							File fileData = new File(data);
