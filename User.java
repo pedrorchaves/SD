@@ -3,7 +3,7 @@ package sockets;
 public class User{
 
     private String Username;
-    private String password;
+    private String Password;
 
     public User(String Username, String Password){
         this.Username = Username;
@@ -13,7 +13,7 @@ public class User{
     public String getUsername(){
         return this.Username;
     }
-    public Strig getPassword(){
+    public String getPassword(){
         return this.Password;
     }
 

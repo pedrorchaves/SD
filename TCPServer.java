@@ -1,4 +1,4 @@
-package sockets;
+//package sockets;
 
 // TCPServer2.java: Multithreaded server
 
@@ -16,17 +16,59 @@ import java.rmi.registry.Registry;
 import java.rmi.server.*;
 import javax.xml.namespace.QName;
 
-public class TCPServer {
+public class TCPServer extends UnicastRemoteObject implements Admin {
     private static int serverPort = 6000;
     ServerSocket listenSocket;
     Socket clientSocket;
 
-    public static void main(String args[]) {
+    public TCPServer() throws RemoteException {
+		super();
+	}
+
+    public String register(String dados, File FileName) throws RemoteException {
+		try (FileWriter writerOfFiles = new FileWriter(FileName)) {
+            writerOfFiles.write(dados + "\n");
+            writerOfFiles.close();
+        } catch (Exception e) {
+            System.out.println("Error when writing to File.");
+            return "Error when writing to File.";
+        }
+		return "Sucess!";
+	}
+
+	public void directories_print(String directory) throws RemoteException {
+        File fileData = new File(directory);
+        String[] lista = fileData.list();
+        System.out.println("Ficheiros na diretoria:");
+        if (lista.length >= 1) {
+            for (String ficheiro : lista) {
+                System.out.println(ficheiro);
+            }
+        } else {
+            System.out.println("This directory is Empty, like my soul :)");
+        }
+	}
+
+	public void failover_stats(int n, int time) throws RemoteException {
+		System.out.println("Numero de pings perdidos máximo:" + Integer.toString(n));
+        System.out.println("Tempo entre pings máximo:" + Integer.toString(time));
+	}
+
+    public static void main(String args[]) throws RemoteException {
         ArrayList<String> Usernames = new ArrayList<>();
         ArrayList<String> Users = new ArrayList<>();
         ArrayList<String> OnlineUsers = new ArrayList<>();
         ArrayList<String> Directories = new ArrayList<>();
         int numero = 0;
+
+        try {
+			Admin h = new TCPServer();
+			Registry r = LocateRegistry.createRegistry(6000);
+			r.rebind("admin", h);
+			System.out.println("RMI Server ready.");
+		} catch (RemoteException re) {
+			System.out.println("Exception in TCPServer.main: " + re);
+		}
 
         try (ServerSocket listenSocket = new ServerSocket(serverPort)) {
             System.out.println("A escuta no porto 6000");
