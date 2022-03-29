@@ -1,0 +1,3 @@
+no comparaAdicionaExpr inicialmente apenas verificavamos as expressoes, mas vimos que assim alguns elementos
+como calls, assigns, returns,... ficavam por ler, entao decidimos adiciona los tambem a funcao
+comparaAdicionaExpr, de modo a que assim ja fossem lidas.

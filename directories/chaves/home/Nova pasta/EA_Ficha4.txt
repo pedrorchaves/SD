@@ -1,0 +1,50 @@
+EA Ficha-4
+
+1)
+Sub-problema -  *Path (i,j) is the path from (1,1) to (i,j) with the longest sum.
+
+2) 
+Optimal Substructure - Path (i,j) contain optimal solutions to smaller problems.
+Path (i,j) \ {P[i,j]} = {Path(i-1,j) ou Path(i-1,j-1)
+
+
+--------------------------------------
+1)Assumptions*
+2)Negation: V(i,j)-P[i,j] < V(i-1,j)
+3)Consequence: V(i,j) < V(i-1,j) + P[i,j]
+4)Contradiction: V(i,j) is the value of the Path(i,j)
+
+
+V(i,j) =  {P[i,j] + max{V(i-1,j),V(i-1,j-1)}}
+
+Function V(i,j):
+if i=0 and j=0 or j>i
+	return 0
+if i=1 and j=1
+	returnP[i,j]
+
+return max(V(i-1,j),V(i-1,j-1))+P[i,j]
+
+
+
+TopDown:
+Function V(i,j):
+if DP[i,j] is cached
+	return DP[i,j]
+if i=0 or j=0 or j>i
+	DP[i,j]=0
+	return DP[i,j]
+if i=1 and j=1
+	DP[i,j]=P[i,j]
+	return DP[i,j]
+DP[i,j]=max(V(i-1,j),V(i-1,j-1))+P[i,j]
+return DP[i,j]
+
+
+BottomUP:
+Function V(i,j):
+DP[1,1]=P[1,1]
+for i=2 to n
+	for j=1 to i
+		DP[i,j] = max(DP[i-1,j-1],DP[i-1,j])+P[i,j])
+return max(DP[1,m],DP[2,n],.....,DP[n,0])

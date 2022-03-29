@@ -17,16 +17,14 @@ import java.rmi.registry.Registry;
 import java.rmi.server.*;
 import javax.xml.namespace.QName;
 
-
-
 public class TCPServer extends UnicastRemoteObject implements Admin {
     private static int serverPort = 6000;
     ServerSocket listenSocket;
     Socket clientSocket;
 
     public TCPServer() throws RemoteException {
-		super();
-	}
+        super();
+    }
 
     public String register(String dados, int ind) throws RemoteException {
         String currentPath = System.getProperty("user.dir");
@@ -35,7 +33,7 @@ public class TCPServer extends UnicastRemoteObject implements Admin {
         File FileName = new File("auth.txt");
         Path pathName = Paths.get("auth.txt");
 
-        if(ind == -1){
+        if (ind == -1) {
             try (FileWriter writerOfFiles = new FileWriter(FileName, true)) {
                 writerOfFiles.write(dados + "\n");
                 writerOfFiles.close();
@@ -46,12 +44,11 @@ public class TCPServer extends UnicastRemoteObject implements Admin {
                 System.out.println("Error when writing to File.");
                 return "Error when writing to File.";
             }
-        } else{
-            
-            
+        } else {
+
             try {
                 List<String> fileContent = new ArrayList<>(Files.readAllLines(pathName, StandardCharsets.UTF_8));
-                fileContent.set(ind,dados);
+                fileContent.set(ind, dados);
                 Files.write(pathName, fileContent, StandardCharsets.UTF_8);
                 return "Sucess!";
             } catch (IOException e) {
@@ -60,32 +57,31 @@ public class TCPServer extends UnicastRemoteObject implements Admin {
             }
         }
         return "-1";
-		
-	}
 
-	public String directories_print(ArrayList<String> Usernames,int User1) throws RemoteException {
-        
+    }
+
+    public String directories_print(ArrayList<String> Usernames, int User1) throws RemoteException {
+
         String currentPath = System.getProperty("user.dir");
         String current = "";
         File file = new File(currentPath + "\\directories\\" + Usernames.get(User1) + "\\home");
         String[] lista = file.list();
-        String out = "Ficheiros na diretoria " + Usernames.get(User1)+ "\\home:\n";
+        String out = "Ficheiros na diretoria " + Usernames.get(User1) + "\\home:\n";
         if (lista.length >= 1) {
             for (String ficheiro : lista) {
                 out = out + ficheiro + "\n";
-            }   
+            }
 
         } else {
             System.out.println("This directory is Empty, like my soul :)");
         }
         return out;
-	}
+    }
 
-	public void failover_stats(int n, int time) throws RemoteException {
-		System.out.println("Numero de pings perdidos máximo:" + Integer.toString(n));
+    public void failover_stats(int n, int time) throws RemoteException {
+        System.out.println("Numero de pings perdidos máximo:" + Integer.toString(n));
         System.out.println("Tempo entre pings máximo:" + Integer.toString(time));
-	}
-
+    }
 
     public ArrayList<String> get_users() throws RemoteException {
         ArrayList<String> Usernames = new ArrayList<>();
@@ -103,13 +99,39 @@ public class TCPServer extends UnicastRemoteObject implements Admin {
             Usernames.add("001");
             return Usernames;
         }
-        if(Usernames.size() < 1){
+        if (Usernames.size() < 1) {
             Usernames.clear();
             Usernames.add("000");
             return Usernames;
         }
-        
+
         return Usernames;
+    }
+
+    public Long memory_print(ArrayList<String> Usernames, int User1) throws java.rmi.RemoteException {
+        String currentPath = System.getProperty("user.dir");
+        String current = "";
+        Long bytes = (long) 0;
+        File file = new File(currentPath + "\\directories\\" + Usernames.get(User1) + "\\home");
+        bytes = getFolderSize(file);
+        return bytes;
+    }
+
+    private long getFolderSize(File folder) {
+        long length = 0;
+        File[] files = folder.listFiles();
+
+        int count = files.length;
+
+        for (int i = 0; i < count; i++) {
+            if (files[i].isFile()) {
+                length += files[i].length();
+            } else {
+                length += getFolderSize(files[i]);
+            }
+        }
+
+        return length;
     }
 
     public static void main(String args[]) throws RemoteException {
@@ -120,13 +142,13 @@ public class TCPServer extends UnicastRemoteObject implements Admin {
         int numero = 0;
 
         try {
-			Admin h = new TCPServer();
-			Registry r = LocateRegistry.createRegistry(1099);
-			r.rebind("admin", h);
-			System.out.println("RMI Server ready.");
-		} catch (RemoteException re) {
-			System.out.println("Exception in TCPServer.main: " + re);
-		}
+            Admin h = new TCPServer();
+            Registry r = LocateRegistry.createRegistry(1099);
+            r.rebind("admin", h);
+            System.out.println("RMI Server ready.");
+        } catch (RemoteException re) {
+            System.out.println("Exception in TCPServer.main: " + re);
+        }
 
         try (ServerSocket listenSocket = new ServerSocket(serverPort)) {
             System.out.println("A escuta no porto 6000");
@@ -228,24 +250,23 @@ class Connection extends Thread {
     }
 
     public static String Authenticate(String UserPass, ArrayList<String> Users, ArrayList<String> OnlineUsers) {
-    
 
         String[] arrayString = UserPass.split(" ");
 
-        for(int i = 0; i < Users.size(); i++){
+        for (int i = 0; i < Users.size(); i++) {
             String[] toCompare = Users.get(i).split(" ");
-            if(toCompare[0].equals(arrayString[0]) && (toCompare[1].equals(arrayString[1]))){
+            if (toCompare[0].equals(arrayString[0]) && (toCompare[1].equals(arrayString[1]))) {
                 username = arrayString[0];
 
                 if (OnlineUsers.indexOf(username) == -1) {
                     return "Authenticated";
-                }       
+                }
                 return "This user is already Online.";
             }
-            
+
         }
         return "That user is not registered. Please speak with an admin.";
-        
+
     }
 
     // =============================
@@ -270,14 +291,14 @@ class Connection extends Thread {
                     String[] arrayString = UserPass.split(" ");
                     int Position = -1;
 
-                    for(int i = 0; i < Users.size(); i++){
+                    for (int i = 0; i < Users.size(); i++) {
                         String[] toCompare = Users.get(i).split(" ");
-                        if(toCompare[0].equals(arrayString[0]) && (toCompare[1].equals(arrayString[1]))){
+                        if (toCompare[0].equals(arrayString[0]) && (toCompare[1].equals(arrayString[1]))) {
                             Position = i;
                             break;
                         }
                     }
-                    
+
                     thread_number[1] = Position;
                     OnlineUsers.add(Usernames.get(Position));
                     System.out.println("User: " + Usernames.get(Position) + " has logged on\n");
@@ -302,7 +323,7 @@ class Connection extends Thread {
                 switch (data) {
                     case ("1") -> {
                         while (true) {
-                            ReadFromFileAuth("auth.txt",Users, Usernames);
+                            ReadFromFileAuth("auth.txt", Users, Usernames);
                             if (OnlineUsers.indexOf(Usernames.get(thread_number[1])) == -1) {
                                 out.writeUTF("-1");
                                 break;
@@ -421,7 +442,7 @@ class Connection extends Thread {
                      * }
                      */
                     case ("3") -> {
-                        ReadFromFileAuth("auth.txt",Users, Usernames);
+                        ReadFromFileAuth("auth.txt", Users, Usernames);
                         if (OnlineUsers.indexOf(Usernames.get(thread_number[1])) == -1) {
                             out.writeUTF("-1");
                         } else {
@@ -430,7 +451,7 @@ class Connection extends Thread {
                         }
                     }
                     case ("4") -> {
-                        ReadFromFileAuth("auth.txt",Users, Usernames);
+                        ReadFromFileAuth("auth.txt", Users, Usernames);
                         String current = Directories.get(thread_number[1]);
                         File file = new File(currentPath + "\\" + "directories" + "\\" + current);
                         String[] directories = file.list(new FilenameFilter() {

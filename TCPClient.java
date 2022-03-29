@@ -23,7 +23,7 @@ public class TCPClient {
 			System.out.println("java TCPClient hostname");
 			System.exit(0);
 		}
-		if(args[0].equals("admin")){
+		if (args[0].equals("admin")) {
 			System.out.println("Hello Admin!");
 			Admin admin = (Admin) LocateRegistry.getRegistry(1099).lookup("admin");
 			try (Scanner sc = new Scanner(System.in)) {
@@ -42,26 +42,25 @@ public class TCPClient {
 							System.out.println("Username: ");
 							String Username = sca.nextLine();
 							ArrayList<String> Usernames = admin.get_users();
-							for(int i = 0; i< Usernames.size(); i++){
+							for (int i = 0; i < Usernames.size(); i++) {
 								String user = Usernames.get(i);
-								if(user.equals(Username)){
-									System.out.println("Este utilizador já se encontra registado\nDeseja modificar os seus dados?\n0: Sim\n1: Nao");
+								if (user.equals(Username)) {
+									System.out.println(
+											"Este utilizador já se encontra registado\nDeseja modificar os seus dados?\n0: Sim\n1: Nao");
 									String resposta = sca.nextLine();
-									if(resposta.strip().equals("0")){
+									if (resposta.strip().equals("0")) {
 										opt = 1;
 										ind = i;
 										break;
-									}
-									else if(resposta.strip().equals("1")){
+									} else if (resposta.strip().equals("1")) {
 										opt = 0;
 										break;
-									}
-									else{
+									} else {
 										System.out.println("Input invalido. Por favor tente de novo.");
 									}
 								}
 							}
-							if(opt == 1){
+							if (opt == 1) {
 								System.out.println("Password: ");
 								String Pass = sca.nextLine();
 								System.out.println("Departamento: ");
@@ -76,39 +75,59 @@ public class TCPClient {
 								String NumCC = sca.nextLine();
 								System.out.println("Validade do CC: ");
 								String ValCC = sca.nextLine();
-								String dados = Username + " " + Pass + " " + Dep + " " + Fac + " " + Tel + " " + Mor + " " + NumCC + " " + ValCC;
+								String dados = Username + " " + Pass + " " + Dep + " " + Fac + " " + Tel + " " + Mor
+										+ " " + NumCC + " " + ValCC;
 								String reg = admin.register(dados, ind);
 								System.out.println(reg);
 							}
-						} case("2") ->{
+						}
+						case ("2") -> {
 							ArrayList<String> Usernames = admin.get_users();
-							if(Usernames.get(0).equals("000")){
+							if (Usernames.get(0).equals("000")) {
 								System.out.println("No users!");
-							}else if(Usernames.get(0).equals("001")){
+							} else if (Usernames.get(0).equals("001")) {
 								System.out.println("File not found!");
-							}else{
-								for(int i = 0; i < Usernames.size();i++){
+							} else {
+								for (int i = 0; i < Usernames.size(); i++) {
 									System.out.println(i + ": " + Usernames.get(i));
 								}
 								String User = sca.nextLine();
 								int User1 = Integer.parseInt(User);
-	
+
 								String out = admin.directories_print(Usernames, User1);
 								System.out.println(out);
 							}
-							
-						} case("0") -> {
+
+						}
+						case ("4") -> {
+							ArrayList<String> Usernames = admin.get_users();
+							if (Usernames.get(0).equals("000")) {
+								System.out.println("No users!");
+							} else if (Usernames.get(0).equals("001")) {
+								System.out.println("File not found!");
+							} else {
+								for (int i = 0; i < Usernames.size(); i++) {
+									System.out.println(i + ": " + Usernames.get(i));
+								}
+								String User = sca.nextLine();
+								int User1 = Integer.parseInt(User);
+
+								Long out = admin.memory_print(Usernames, User1);
+								System.out.println(String.format("O utilizador tem %,d  bytes usados!", out));
+							}
+						}
+						case ("0") -> {
 							System.out.println("Logged out successfully");
 							System.exit(0);
 						}
 					}
 				}
-			}catch(FileNotFoundException e) {
+			} catch (FileNotFoundException e) {
 				System.out.println("File not found!");
-			}catch (IOException e) {
+			} catch (IOException e) {
 				System.out.println("Admin logged out\nNice!");
 			}
-		}else{
+		} else {
 			// 1o passo - criar socket
 			try (Socket s = new Socket(args[0], serverPort)) {
 				System.out.println("SOCKET=" + s);
@@ -179,46 +198,46 @@ public class TCPClient {
 								}
 								break;
 							} /*
-								* case ("2") -> {
-								* System.out.
-								* println("Que servidor deseja alterar?\n0 - Principal \n1 - Secundario\n");
-								* String resp = sc.nextLine();
-								* out.writeUTF(resp);
-								* while(true){
-								* System.out.
-								* println("O que quer alterar?\n0 - Endereco IP\n1 - Porto\n2 - IP e Porto\n3 - Nenhum\n"
-								* );
-								* String opt = sc.nextLine();
-								* out.writeUTF(opt);
-								* if(opt.equals("0")){
-								* System.out.println("Escreva o novo IP\n");
-								* String newIP = sc.nextLine();
-								* out.writeUTF(newIP);
-								* }else if(opt.equals("1")){
-								* System.out.println("Escreva o novo Porto\n");
-								* String newIP = sc.nextLine();
-								* out.writeUTF(newIP);
-								* }else if(opt.equals("2")){
-								* System.out.println("Escreva IP:Porto\n");
-								* String newIP = sc.nextLine();
-								* out.writeUTF(newIP);
-								* }else if(opt.equals("3")){
-								* System.out.println("Leaving already\n");
-								* break;
-								* }else{
-								* System.out.println("Invalid Option NOOB!");
-								* continue;
-								* }
-								* String check = in.readUTF();
-								* if(check.equals("-1")){
-								* System.out.println("Thats not an IPv4!!");
-								* }else if(check.equals("0")){
-								* System.out.println("Got it!");
-								* break;
-								* }
-								* }
-								* }
-								*/
+								 * case ("2") -> {
+								 * System.out.
+								 * println("Que servidor deseja alterar?\n0 - Principal \n1 - Secundario\n");
+								 * String resp = sc.nextLine();
+								 * out.writeUTF(resp);
+								 * while(true){
+								 * System.out.
+								 * println("O que quer alterar?\n0 - Endereco IP\n1 - Porto\n2 - IP e Porto\n3 - Nenhum\n"
+								 * );
+								 * String opt = sc.nextLine();
+								 * out.writeUTF(opt);
+								 * if(opt.equals("0")){
+								 * System.out.println("Escreva o novo IP\n");
+								 * String newIP = sc.nextLine();
+								 * out.writeUTF(newIP);
+								 * }else if(opt.equals("1")){
+								 * System.out.println("Escreva o novo Porto\n");
+								 * String newIP = sc.nextLine();
+								 * out.writeUTF(newIP);
+								 * }else if(opt.equals("2")){
+								 * System.out.println("Escreva IP:Porto\n");
+								 * String newIP = sc.nextLine();
+								 * out.writeUTF(newIP);
+								 * }else if(opt.equals("3")){
+								 * System.out.println("Leaving already\n");
+								 * break;
+								 * }else{
+								 * System.out.println("Invalid Option NOOB!");
+								 * continue;
+								 * }
+								 * String check = in.readUTF();
+								 * if(check.equals("-1")){
+								 * System.out.println("Thats not an IPv4!!");
+								 * }else if(check.equals("0")){
+								 * System.out.println("Got it!");
+								 * break;
+								 * }
+								 * }
+								 * }
+								 */
 							case ("3") -> {
 								String data = in.readUTF();
 								File fileData = new File(data);
@@ -318,5 +337,5 @@ public class TCPClient {
 			}
 		}
 	}
-		
+
 }
