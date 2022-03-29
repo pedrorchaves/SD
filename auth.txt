@@ -1,4 +1,7 @@
-david 123 dei uc 2 fa 2 2
+david 457 dei uc 2 fa 2 2
 chaves 123 dei uc 3 d 3 3
 pedro alalal dei uc 4 g 4 4
-fabio lala a a 2 2 1 1
+fabio 453 r r 5 5 5 5
+joao 321 r r 2 2 2 2
+duarte 123 2 2 2 2 2 2
+samuel 566 r a 4 4 4 4

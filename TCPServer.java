@@ -2,20 +2,22 @@
 
 // TCPServer2.java: Multithreaded server
 
-import java.io.FileNotFoundException;
-import java.lang.*;
+import java.lang.Object;
 import java.net.*;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.*;
 import java.nio.file.StandardOpenOption;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.Scanner;
 import java.util.*;
-import java.io.Serializable;
 import java.rmi.*;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.*;
 import javax.xml.namespace.QName;
+
+
 
 public class TCPServer extends UnicastRemoteObject implements Admin {
     private static int serverPort = 6000;
@@ -26,20 +28,39 @@ public class TCPServer extends UnicastRemoteObject implements Admin {
 		super();
 	}
 
-    public String register(String dados) throws RemoteException {
+    public String register(String dados, int ind) throws RemoteException {
         String currentPath = System.getProperty("user.dir");
         String[] temp = dados.split(" ");
         currentPath = currentPath + "\\directories\\" + temp[0] + "\\home";
         File FileName = new File("auth.txt");
-		try (FileWriter writerOfFiles = new FileWriter(FileName, true)) {
-            writerOfFiles.write(dados + "\n");
-            writerOfFiles.close();
-            new File(currentPath).mkdirs();
-            return "Sucess!";
-        } catch (Exception e) {
-            System.out.println("Error when writing to File.");
-            return "Error when writing to File.";
+        Path pathName = Paths.get("auth.txt");
+
+        if(ind == -1){
+            try (FileWriter writerOfFiles = new FileWriter(FileName, true)) {
+                writerOfFiles.write(dados + "\n");
+                writerOfFiles.close();
+                new File(currentPath).mkdirs();
+
+                return "Sucess!";
+            } catch (Exception e) {
+                System.out.println("Error when writing to File.");
+                return "Error when writing to File.";
+            }
+        } else{
+            
+            
+            try {
+                List<String> fileContent = new ArrayList<>(Files.readAllLines(pathName, StandardCharsets.UTF_8));
+                fileContent.set(ind,dados);
+                Files.write(pathName, fileContent, StandardCharsets.UTF_8);
+                return "Sucess!";
+            } catch (IOException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
         }
+        return "-1";
+		
 	}
 
 	public String directories_print(ArrayList<String> Usernames,int User1) throws RemoteException {
@@ -64,6 +85,32 @@ public class TCPServer extends UnicastRemoteObject implements Admin {
 		System.out.println("Numero de pings perdidos máximo:" + Integer.toString(n));
         System.out.println("Tempo entre pings máximo:" + Integer.toString(time));
 	}
+
+
+    public ArrayList<String> get_users() throws RemoteException {
+        ArrayList<String> Usernames = new ArrayList<>();
+        String out = "";
+        // Reading Usernames and Passwords from File
+        File authentication = new File("auth.txt");
+        try (Scanner readFile = new Scanner(authentication)) {
+            while (readFile.hasNextLine()) {
+                String Line = readFile.nextLine();
+                String[] arrayLine = Line.split(" ");
+                Usernames.add(arrayLine[0]);
+            }
+        } catch (FileNotFoundException e) {
+            Usernames.clear();
+            Usernames.add("001");
+            return Usernames;
+        }
+        if(Usernames.size() < 1){
+            Usernames.clear();
+            Usernames.add("000");
+            return Usernames;
+        }
+        
+        return Usernames;
+    }
 
     public static void main(String args[]) throws RemoteException {
         ArrayList<String> Usernames = new ArrayList<>();
@@ -220,8 +267,17 @@ class Connection extends Thread {
                 System.out.println(Authentication);
                 if (Authentication.equals("Authenticated")) {
                     out.writeUTF(Authentication);
+                    String[] arrayString = UserPass.split(" ");
+                    int Position = -1;
 
-                    int Position = Users.indexOf(UserPass);
+                    for(int i = 0; i < Users.size(); i++){
+                        String[] toCompare = Users.get(i).split(" ");
+                        if(toCompare[0].equals(arrayString[0]) && (toCompare[1].equals(arrayString[1]))){
+                            Position = i;
+                            break;
+                        }
+                    }
+                    
                     thread_number[1] = Position;
                     OnlineUsers.add(Usernames.get(Position));
                     System.out.println("User: " + Usernames.get(Position) + " has logged on\n");
@@ -246,6 +302,7 @@ class Connection extends Thread {
                 switch (data) {
                     case ("1") -> {
                         while (true) {
+                            ReadFromFileAuth("auth.txt",Users, Usernames);
                             if (OnlineUsers.indexOf(Usernames.get(thread_number[1])) == -1) {
                                 out.writeUTF("-1");
                                 break;
@@ -364,6 +421,7 @@ class Connection extends Thread {
                      * }
                      */
                     case ("3") -> {
+                        ReadFromFileAuth("auth.txt",Users, Usernames);
                         if (OnlineUsers.indexOf(Usernames.get(thread_number[1])) == -1) {
                             out.writeUTF("-1");
                         } else {
@@ -372,6 +430,7 @@ class Connection extends Thread {
                         }
                     }
                     case ("4") -> {
+                        ReadFromFileAuth("auth.txt",Users, Usernames);
                         String current = Directories.get(thread_number[1]);
                         File file = new File(currentPath + "\\" + "directories" + "\\" + current);
                         String[] directories = file.list(new FilenameFilter() {

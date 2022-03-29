@@ -37,49 +37,66 @@ public class TCPClient {
 
 					switch (texto) {
 						case ("1") -> {
+							int opt = 1;
+							int ind = -1;
 							System.out.println("Username: ");
 							String Username = sca.nextLine();
-							System.out.println("Password: ");
-							String Pass = sca.nextLine();
-							System.out.println("Departamento: ");
-							String Dep = sca.nextLine();
-							System.out.println("Faculdade: ");
-							String Fac = sca.nextLine();
-							System.out.println("Contacto telefónico: ");
-							String Tel = sca.nextLine();
-							System.out.println("Morada: ");
-							String Mor = sca.nextLine();
-							System.out.println("Número do CC: ");
-							String NumCC = sca.nextLine();
-							System.out.println("Validade do CC: ");
-							String ValCC = sca.nextLine();
-							String dados = Username + " " + Pass + " " + Dep + " " + Fac + " " + Tel + " " + Mor + " " + NumCC + " " + ValCC;
-							String reg = admin.register(dados);
-							System.out.println(reg);
-						} case("2") ->{
-							ArrayList<String> Usernames = new ArrayList<>();
-							// Reading Usernames and Passwords from File
-							File authentication = new File("auth.txt");
-							try (Scanner readFile = new Scanner(authentication)) {
-								while (readFile.hasNextLine()) {
-									String Line = readFile.nextLine();
-									String[] arrayLine = Line.split(" ");
-									Usernames.add(arrayLine[0]);
+							ArrayList<String> Usernames = admin.get_users();
+							for(int i = 0; i< Usernames.size(); i++){
+								String user = Usernames.get(i);
+								if(user.equals(Username)){
+									System.out.println("Este utilizador já se encontra registado\nDeseja modificar os seus dados?\n0: Sim\n1: Nao");
+									String resposta = sca.nextLine();
+									if(resposta.strip().equals("0")){
+										opt = 1;
+										ind = i;
+										break;
+									}
+									else if(resposta.strip().equals("1")){
+										opt = 0;
+										break;
+									}
+									else{
+										System.out.println("Input invalido. Por favor tente de novo.");
+									}
 								}
-							} catch (FileNotFoundException e) {
-								System.out.println("hehe wrong filename");
 							}
-							if(Usernames.size() < 1){
+							if(opt == 1){
+								System.out.println("Password: ");
+								String Pass = sca.nextLine();
+								System.out.println("Departamento: ");
+								String Dep = sca.nextLine();
+								System.out.println("Faculdade: ");
+								String Fac = sca.nextLine();
+								System.out.println("Contacto telefónico: ");
+								String Tel = sca.nextLine();
+								System.out.println("Morada: ");
+								String Mor = sca.nextLine();
+								System.out.println("Número do CC: ");
+								String NumCC = sca.nextLine();
+								System.out.println("Validade do CC: ");
+								String ValCC = sca.nextLine();
+								String dados = Username + " " + Pass + " " + Dep + " " + Fac + " " + Tel + " " + Mor + " " + NumCC + " " + ValCC;
+								String reg = admin.register(dados, ind);
+								System.out.println(reg);
+							}
+						} case("2") ->{
+							ArrayList<String> Usernames = admin.get_users();
+							if(Usernames.get(0).equals("000")){
 								System.out.println("No users!");
+							}else if(Usernames.get(0).equals("001")){
+								System.out.println("File not found!");
+							}else{
+								for(int i = 0; i < Usernames.size();i++){
+									System.out.println(i + ": " + Usernames.get(i));
+								}
+								String User = sca.nextLine();
+								int User1 = Integer.parseInt(User);
+	
+								String out = admin.directories_print(Usernames, User1);
+								System.out.println(out);
 							}
-							for(int i = 0; i < Usernames.size();i++){
-								System.out.println(i + " -" + Usernames.get(i));
-							}
-							String User = sca.nextLine();
-							int User1 = Integer.parseInt(User);
-
-							String out = admin.directories_print(Usernames, User1);
-							System.out.println(out);
+							
 						} case("0") -> {
 							System.out.println("Logged out successfully");
 							System.exit(0);
