@@ -109,11 +109,19 @@ public class TCPClient {
 								for (int i = 0; i < Usernames.size(); i++) {
 									System.out.println(i + ": " + Usernames.get(i));
 								}
+								System.out.println(Usernames.size() + ": Todos");
 								String User = sca.nextLine();
 								int User1 = Integer.parseInt(User);
-
-								Long out = admin.memory_print(Usernames, User1);
-								System.out.println(String.format("O utilizador tem %,d  bytes usados!", out));
+								if(User1 < Usernames.size() && User1 >= 0){
+									Long out = admin.memory_print(Usernames, User1);
+									System.out.println(String.format("O utilizador tem %,d  bytes usados!", out));
+								}else{
+									Long out = 0L;
+									for (int i = 0; i < Usernames.size(); i++) {
+										out += admin.memory_print(Usernames, i);
+									}
+									System.out.println(String.format("Os utilizadores tem %,d  bytes usados!", out));
+								}
 							}
 						}
 						case ("0") -> {
@@ -320,6 +328,107 @@ public class TCPClient {
 									}
 								} else {
 									System.out.println("Nice Move!!");
+								}
+							}
+							case("7") -> {
+								String data = in.readUTF();
+								File fileData = new File(data);
+								if (data.equals("-1")) {
+									System.out.println("\nNao estas autenticado!");
+								} else {
+									String[] lista = fileData.list();
+									File[] files = fileData.listFiles();
+									int[] arrayInds = new int[lista.length];
+									int k = 0;
+									System.out.println("Qual ficheiro quer carregar?\n");
+									for (int i = 0; i<lista.length; i++) {
+										if(files[i].isFile()){
+											arrayInds[k] = i;
+											System.out.println(k + ": " + lista[i]);
+											k++;
+										}
+									}
+									String currentDir = in.readUTF();
+									String fileInd = sc.nextLine();
+									Integer fileIndex = Integer.parseInt(fileInd);
+									out.writeUTF(Integer.toString(arrayInds[fileIndex]));
+
+                            		System.out.println("A descarregar o ficheiro: " + lista[arrayInds[fileIndex]].toString());
+									
+									Integer size = 100;
+									Socket socketDown = new Socket(args[0], 6969);
+									byte[] dataDown = new byte[size];
+
+									FileOutputStream fileOutput = new FileOutputStream(currentDir + "\\" + lista[arrayInds[fileIndex]].toString());
+									BufferedOutputStream buffOutput = new BufferedOutputStream(fileOutput);
+									DataInputStream inp = new DataInputStream(socketDown.getInputStream());
+									int atual = 0;
+									while((atual=inp.read(dataDown))!=-1){
+										buffOutput.write(dataDown, 0, atual);
+									}
+									buffOutput.flush();
+									socketDown.close();
+									System.out.println("File downloaded successfully!");
+
+								}
+							}
+							case("8") -> {
+								String data = in.readUTF();
+								File fileData = new File(data); //ficheiro local
+								if (data.equals("-1")) {
+									System.out.println("\nNao estas autenticado!");
+								} else {
+									String[] lista = fileData.list();
+									File[] files = fileData.listFiles();
+									int[] arrayInds = new int[lista.length];
+									int k = 0;
+									System.out.println("Qual ficheiro quer carregar?\n");
+									for (int i = 0; i<lista.length; i++) {
+										if(files[i].isFile()){
+											arrayInds[k] = i;
+											System.out.println(k + ": " + lista[i]);
+											k++;
+										}
+									}
+									String currentDir = in.readUTF(); //pasta server
+									String fileInd = sc.nextLine();
+									Integer fileIndex = Integer.parseInt(fileInd);
+									out.writeUTF(Integer.toString(arrayInds[fileIndex]));
+
+                            		System.out.println("A carregar o ficheiro: " + lista[arrayInds[fileIndex]].toString());
+									
+									Integer size = 100;
+									Socket socketup = new Socket(args[0], 4200);
+									
+
+									FileInputStream fileInput = new FileInputStream(data + "\\" + lista[arrayInds[fileIndex]].toString());
+									BufferedInputStream buffInput = new BufferedInputStream(fileInput);
+
+									DataOutputStream out1 = new DataOutputStream(socketup.getOutputStream());
+									long atual = 0;
+									byte[] data1;
+									
+									File file = new File(data + "\\" + lista[arrayInds[fileIndex]].toString());
+									long fileSize = file.length();
+									
+									while(atual != fileSize){
+										if(fileSize - atual >= size){
+											atual+=size;
+										}
+										else{
+											size = (int)(fileSize-atual);
+											atual = fileSize;
+										}
+
+										data1 = new byte[size];
+										buffInput.read(data1,0,size);
+										out1.write(data1);
+									
+									}
+									out.flush();
+									socketup.close();
+									System.out.println("File uploaded successfully!");
+
 								}
 							}
 							case ("0") -> {

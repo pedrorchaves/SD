@@ -26,7 +26,7 @@ public class UDPClient{
 					
 					byte[] buffer = new byte[1000];
 					//aSocket.setSoTimeout(10000);
-					DatagramPacket reply = new DatagramPacket(buffer, buffer.length);	
+					DatagramPacket reply = new DatagramPacket(buffer, buffer.length);
 					aSocket.receive(reply);
 					System.out.println("Recebeu: " + new String(reply.getData(), 0, reply.getLength()));
 				}	

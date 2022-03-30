@@ -66,15 +66,8 @@ public class TCPServer extends UnicastRemoteObject implements Admin {
         String current = "";
         File file = new File(currentPath + "\\directories\\" + Usernames.get(User1) + "\\home");
         String[] lista = file.list();
-        String out = "Ficheiros na diretoria " + Usernames.get(User1) + "\\home:\n";
-        if (lista.length >= 1) {
-            for (String ficheiro : lista) {
-                out = out + ficheiro + "\n";
-            }
-
-        } else {
-            System.out.println("This directory is Empty, like my soul :)");
-        }
+        String out = "Ficheiros nas diretorias de " + Usernames.get(User1) + "\\home:\n";
+        out += getFolders(file, Usernames.get(User1), 0);
         return out;
     }
 
@@ -111,7 +104,7 @@ public class TCPServer extends UnicastRemoteObject implements Admin {
     public Long memory_print(ArrayList<String> Usernames, int User1) throws java.rmi.RemoteException {
         String currentPath = System.getProperty("user.dir");
         String current = "";
-        Long bytes = (long) 0;
+        Long bytes = 0L;
         File file = new File(currentPath + "\\directories\\" + Usernames.get(User1) + "\\home");
         bytes = getFolderSize(file);
         return bytes;
@@ -132,6 +125,32 @@ public class TCPServer extends UnicastRemoteObject implements Admin {
         }
 
         return length;
+    }
+
+    private String getFolders(File folder, String User, Integer prof) {
+        String out = "";
+        File[] files = folder.listFiles();
+
+        int count = files.length;
+
+        for (int i = 0; i < count; i++) {
+            if (files[i].isFile()) {
+                String direct = files[i].toString();
+                for (int k = 0; k < prof; k++){
+                    out += "    ";
+                }
+                out += "-> " + direct.substring(direct.lastIndexOf("\\") + 1) + "\n";
+            } else {
+                String direct = files[i].toString();
+                for (int k = 0; k < prof; k++){
+                    out += "    ";
+                }
+                out += "-> " + direct.substring(direct.lastIndexOf("\\") + 1) + "\n";
+                out += getFolders(files[i], User, prof + 1);
+            }
+        }
+
+        return out;
     }
 
     public static void main(String args[]) throws RemoteException {
@@ -269,6 +288,77 @@ class Connection extends Thread {
 
     }
 
+    public static String uploadFiles(String destination, int portDown, int size, String localhost){
+        try {
+            
+            ServerSocket socketDown = new ServerSocket(portDown);
+            Socket connectionDown = socketDown.accept();
+            InetAddress IA = InetAddress.getByName(localhost);
+
+            DataInputStream inp = new DataInputStream(connectionDown.getInputStream());
+            FileOutputStream fileOutput = new FileOutputStream(destination);
+            BufferedOutputStream buffOutput = new BufferedOutputStream(fileOutput);
+            
+            byte[] dataDown = new byte[size];
+            int atual = 0;
+
+            while((atual=inp.read(dataDown))!=-1){
+                buffOutput.write(dataDown, 0, atual);
+            }
+									
+            buffOutput.flush();
+            
+            connectionDown.close();
+            socketDown.close();
+            return "Download complete!";
+
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+            return "Something is missing?";
+        }
+    }
+
+    public static String downloadFiles(File ficheiro, int portDown, int size, String localhost){
+        try {
+            ServerSocket socketDown = new ServerSocket(portDown);
+            Socket connectionDown = socketDown.accept();
+            InetAddress IA = InetAddress.getByName(localhost);
+
+            DataOutputStream out = new DataOutputStream(connectionDown.getOutputStream());
+            FileInputStream fileInput = new FileInputStream(ficheiro);
+            BufferedInputStream buffInput = new BufferedInputStream(fileInput);
+
+            long atual = 0;
+            byte[] data;
+            
+            long fileSize = ficheiro.length();
+            
+            while(atual != fileSize){
+                if(fileSize - atual >= size){
+                    atual+=size;
+                }
+                else{
+                    size = (int)(fileSize-atual);
+                    atual = fileSize;
+                }
+
+                data = new byte[size];
+                buffInput.read(data,0,size);
+                out.write(data);
+            
+            }
+            out.flush();
+            connectionDown.close();
+            socketDown.close();
+            return "Download complete!";
+
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+            return "Something is missing?";
+        }
+    }
     // =============================
     public void run() {
 
@@ -548,6 +638,47 @@ class Connection extends Thread {
                             out.writeUTF("0");
                         }
                     }
+                    case("7") -> {
+                        ReadFromFileAuth("auth.txt", Users, Usernames);
+                        if (OnlineUsers.indexOf(Usernames.get(thread_number[1])) == -1) {
+                            out.writeUTF("-1");
+                        } else {
+                            String current = Directories.get(thread_number[1]);
+                            out.writeUTF(currentPath + "\\" + "directories" + "\\" + current);
+                            
+                            File fileData = new File(currentPath + "\\" + "directories" + "\\" + current);
+                            String[] lista = fileData.list();
+                            out.writeUTF(currentLocalPath);
+                            String fileInd = in.readUTF();
+                            Integer fileIndex = Integer.parseInt(fileInd);
+
+                            System.out.println("A carregar o ficheiro: " + lista[fileIndex].toString());
+                            File ficheiro = new File(currentPath + "\\" + "directories" + "\\" + current + "\\" + lista[fileIndex].toString());
+                            String work = downloadFiles(ficheiro , 6969, 100, "localhost");
+                            System.out.println(work);
+                        }
+                    }
+                    case("8") -> {
+                        ReadFromFileAuth("auth.txt", Users, Usernames);
+                        if (OnlineUsers.indexOf(Usernames.get(thread_number[1])) == -1) {
+                            out.writeUTF("-1");
+                        } else {
+                            String current = Directories.get(thread_number[1]);
+                            out.writeUTF(currentLocalPath);
+                            
+                            File fileData = new File(currentLocalPath);
+                            String[] lista = fileData.list();
+                            out.writeUTF(currentPath + "\\" + "directories" + "\\" + current);
+                            String fileInd = in.readUTF();
+                            Integer fileIndex = Integer.parseInt(fileInd);
+
+                            System.out.println("A carregar o ficheiro: " + lista[fileIndex].toString());
+                            String ficheiro = currentPath + "\\" + "directories" + "\\" + current + "\\" + lista[fileIndex].toString();
+                            String work = uploadFiles(ficheiro , 4200, 100, "localhost");
+                            System.out.println(work);
+                        }
+                    }
+                    
                     case ("0") -> {
                         OnlineUsers.remove(Usernames.get(thread_number[1]));
                         // System.out.println("User[" + Usernames.get(thread_number[1]) + "] logged
