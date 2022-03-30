@@ -10,7 +10,7 @@ public interface Admin extends Remote {
 
 	public String directories_print(ArrayList<String> Usernames, int User1) throws java.rmi.RemoteException;
 
-	public void failover_stats(int n, int time) throws java.rmi.RemoteException;
+	public String failover_stats(int n, int time) throws java.rmi.RemoteException;
 
 	public ArrayList<String> get_users() throws java.rmi.RemoteException;
 

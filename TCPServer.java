@@ -4,6 +4,7 @@
 
 import java.lang.Object;
 import java.net.*;
+import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.nio.file.StandardOpenOption;
@@ -17,8 +18,23 @@ import java.rmi.registry.Registry;
 import java.rmi.server.*;
 import javax.xml.namespace.QName;
 
-public class TCPServer extends UnicastRemoteObject implements Admin {
-    private static int serverPort = 6000;
+public class TCPServer extends UnicastRemoteObject implements Admin, Runnable {
+    UDPServer[] getPings = new UDPServer[2];
+    private static int TCPserverPort = 6000;
+    private static int RMIserverPort = 6969;
+    private static int UDPserverPortPrimer = 4200;
+    private static int UDPserverPortSec = 4201;
+
+    private static final int bufsize = 4096;
+    private static int maxfailedrounds = 5;
+    private static int timeout = 5000;
+    private static int period = 1000;
+    private static int port = 4200;
+    private static int flag = -1;
+
+    private static String hostname;
+
+    private static int thread_count = 0;
     ServerSocket listenSocket;
     Socket clientSocket;
 
@@ -71,9 +87,13 @@ public class TCPServer extends UnicastRemoteObject implements Admin {
         return out;
     }
 
-    public void failover_stats(int n, int time) throws RemoteException {
-        System.out.println("Numero de pings perdidos máximo:" + Integer.toString(n));
-        System.out.println("Tempo entre pings máximo:" + Integer.toString(time));
+    public String failover_stats(int n, int time) throws RemoteException {
+        String out = "";
+        out += "Numero de pings perdidos máximo: " + Integer.toString(n);
+        out += "\nTempo entre pings máximo: " + Integer.toString(time);
+        maxfailedrounds = n;
+        timeout = time;
+        return out;
     }
 
     public ArrayList<String> get_users() throws RemoteException {
@@ -154,33 +174,211 @@ public class TCPServer extends UnicastRemoteObject implements Admin {
     }
 
     public static void main(String args[]) throws RemoteException {
+        
+        hostname = args[0];
+
+        int count = 1;
+        try (DatagramSocket ds = new DatagramSocket()) {
+            InetAddress ia = InetAddress.getByName(hostname);
+            ds.setSoTimeout(timeout);
+            int failedheartbeats = 0;
+            try {
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                DataOutputStream dos = new DataOutputStream(baos);
+                dos.writeInt(count++);
+                byte [] buf = baos.toByteArray();
+                
+                DatagramPacket dp = new DatagramPacket(buf, buf.length, ia, port);                
+                ds.send(dp);
+                
+                byte [] rbuf = new byte[bufsize];
+                DatagramPacket dr = new DatagramPacket(rbuf, rbuf.length);
+
+                ds.receive(dr);
+                failedheartbeats = 0;
+                ByteArrayInputStream bais = new ByteArrayInputStream(rbuf, 0, dr.getLength());
+                DataInputStream dis = new DataInputStream(bais);
+                int n = dis.readInt();
+                System.out.println("Got: " + n + ".");
+            }
+            catch (SocketTimeoutException ste) {
+                failedheartbeats++;
+                System.out.println("Teste: " + failedheartbeats);
+            } catch (IOException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+            if(failedheartbeats == 1){
+                port = UDPserverPortPrimer;
+                System.out.println("Servidor primario não existe");
+                flag = 0;
+            }else{
+                port = UDPserverPortSec;
+                System.out.println("Servidor primario existe");
+            }
+        } catch (SocketException e1) {
+            // TODO Auto-generated catch block
+            e1.printStackTrace();
+        } catch (UnknownHostException e1) {
+            // TODO Auto-generated catch block
+            e1.printStackTrace();
+        }
+
+        for(int i = 0;i<2;i++){
+            TCPServer TCPandUDP = new TCPServer();
+            Thread thread = new Thread(TCPandUDP);
+            thread.start();
+        }
+        
+    }
+
+    public void run(){
         ArrayList<String> Usernames = new ArrayList<>();
         ArrayList<String> Users = new ArrayList<>();
         ArrayList<String> OnlineUsers = new ArrayList<>();
         ArrayList<String> Directories = new ArrayList<>();
         int numero = 0;
+        thread_count++;
 
-        try {
-            Admin h = new TCPServer();
-            Registry r = LocateRegistry.createRegistry(1099);
-            r.rebind("admin", h);
-            System.out.println("RMI Server ready.");
-        } catch (RemoteException re) {
-            System.out.println("Exception in TCPServer.main: " + re);
-        }
-
-        try (ServerSocket listenSocket = new ServerSocket(serverPort)) {
-            System.out.println("A escuta no porto 6000");
-            System.out.println("LISTEN SOCKET=" + listenSocket);
-            while (true) {
-                Socket clientSocket = listenSocket.accept(); // BLOQUEANTE
-                System.out.println("CLIENT_SOCKET (created at accept())=" + clientSocket);
-                numero++;
-                new Connection(listenSocket, serverPort, clientSocket, numero, Usernames, Users, OnlineUsers,
-                        Directories);
+        if(thread_count == 1){ //tcp
+            //rmi
+            if(flag == 0){
+                //System.out.println("RMI");
+                try {
+                    Admin h = new TCPServer();
+                    Registry r = LocateRegistry.createRegistry(6969);
+                    r.rebind("admin", h);
+                    System.out.println("RMI Server ready.");
+                } catch (RemoteException re) {
+                    System.out.println("Exception in TCPServer.main: " + re);
+                }
+                //rmi
+    
+                try (ServerSocket listenSocket = new ServerSocket(TCPserverPort)) {
+                    System.out.println("A escuta no porto 6000");
+                    System.out.println("LISTEN SOCKET=" + listenSocket);
+                    while (true) {
+                        Socket clientSocket = listenSocket.accept(); // BLOQUEANTE
+                        System.out.println("CLIENT_SOCKET (created at accept())=" + clientSocket);
+                        numero++;
+                        new Connection(listenSocket, TCPserverPort, clientSocket, numero, Usernames, Users, OnlineUsers,
+                                Directories);
+                    }
+                } catch (IOException e) {
+                    System.out.println("Listen:" + e.getMessage());
+                }
             }
-        } catch (IOException e) {
-            System.out.println("Listen:" + e.getMessage());
+        }else if(thread_count == 2){ //udp
+            //criar 2 threads, 1 para receber pings e 1 para enviar
+            for(int i = 0;i<2;i++){
+                getPings[i] = new UDPServer();
+                Thread thread = new Thread(getPings[i]);
+                getPings[i].setPort(port);
+                thread.start();
+            }
+        }
+        
+    }
+}
+class UDPServer implements Runnable{
+    private int primerPort = 4200;
+    private static final int bufsize = 4096;
+
+    private  int secundPort = 4201;
+    private int maxfailedrounds = 5;
+    private int timeout = 5000;
+    private int period = 1000;
+    private int port;
+    private static int thread_number = 0;
+
+    public void setPort(int port){
+        this.port = port;
+    }
+    public void setTimeout(int timeout){
+        this.timeout = timeout;
+    }
+    public void setMFR(int maxfailedrounds){
+        this.maxfailedrounds = maxfailedrounds;
+    }
+    public void setPrimerPort(int primerPort){
+        this.primerPort = primerPort;
+    }
+    public void setSecundPort(int secundPort){
+        this.secundPort = secundPort;
+    }
+    
+    public void run(){
+        int count = 1;
+        thread_number++;
+        if(thread_number == 1){
+            try (DatagramSocket ds = new DatagramSocket(port)) {
+                InetAddress ia = InetAddress.getByName("localhost");
+                System.out.println("Server waiting");
+                while (true) {
+                    byte buf[] = new byte[bufsize];
+                    DatagramPacket dp = new DatagramPacket(buf, buf.length);
+                    ds.receive(dp);
+                    ByteArrayInputStream bais = new ByteArrayInputStream(buf, 0, dp.getLength());
+                    DataInputStream dis = new DataInputStream(bais);
+                    int countS = dis.readInt();
+    
+                    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                    DataOutputStream dos = new DataOutputStream(baos);
+                    dos.writeInt(countS);
+                    byte resp[] = baos.toByteArray();
+                    DatagramPacket dpresp = new DatagramPacket(resp, resp.length, dp.getAddress(), dp.getPort());
+                    ds.send(dpresp);
+                }
+            } catch (IOException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+        }else if(thread_number == 2){
+            if(port == primerPort){
+                port = secundPort;
+            }else if(port == secundPort){
+                port = primerPort;
+            }
+            try (DatagramSocket ds = new DatagramSocket()) {
+                InetAddress ia = InetAddress.getByName("localhost");
+                ds.setSoTimeout(timeout);
+                int failedheartbeats = 0;
+                while (failedheartbeats < maxfailedrounds) {
+                    try {
+                        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                        DataOutputStream dos = new DataOutputStream(baos);
+                        dos.writeInt(count++);
+                        byte [] buf = baos.toByteArray();
+                        
+                        DatagramPacket dp = new DatagramPacket(buf, buf.length, ia, port);                
+                        ds.send(dp);
+                        
+                        byte [] rbuf = new byte[bufsize];
+                        DatagramPacket dr = new DatagramPacket(rbuf, rbuf.length);
+    
+                        ds.receive(dr);
+                        failedheartbeats = 0;
+                        ByteArrayInputStream bais = new ByteArrayInputStream(rbuf, 0, dr.getLength());
+                        DataInputStream dis = new DataInputStream(bais);
+                        int n = dis.readInt();
+                        //System.out.println("Got: " + n + ".");
+                    }
+                    catch (IOException ste) {
+                        failedheartbeats++;
+                        System.out.println("Failed heartbeats: " + failedheartbeats);
+                    }
+                    Thread.sleep(period);
+                }
+            } catch (SocketException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            } catch (InterruptedException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            } catch (UnknownHostException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
         }
 
     }

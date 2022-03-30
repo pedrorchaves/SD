@@ -14,7 +14,8 @@ import javax.sound.sampled.SourceDataLine;
 import java.io.*;
 
 public class TCPClient {
-	private static int serverPort = 6000;
+    private static int RMIserverPort = 6969;
+    private static int TCPserverPort = 6000;
 
 	public static void main(String args[]) throws RemoteException, NotBoundException {
 		Scanner sca = new Scanner(System.in);
@@ -25,7 +26,7 @@ public class TCPClient {
 		}
 		if (args[0].equals("admin")) {
 			System.out.println("Hello Admin!");
-			Admin admin = (Admin) LocateRegistry.getRegistry(1099).lookup("admin");
+			Admin admin = (Admin) LocateRegistry.getRegistry(RMIserverPort).lookup("admin");
 			try (Scanner sc = new Scanner(System.in)) {
 				while (true) { // while consola
 					// READ FROM SOCKET
@@ -99,6 +100,18 @@ public class TCPClient {
 							}
 
 						}
+						case("3") -> {
+							System.out.println("Escolha o número máximo de pings falhados possiveis!");
+							String User = sca.nextLine();
+							int n = Integer.parseInt(User);
+
+							System.out.println("Escolha o tempo máximo entre pings!");
+							String User1 = sca.nextLine();
+							int time = Integer.parseInt(User1);
+
+							String out = admin.failover_stats(n, time);
+							System.out.println(out);
+						}
 						case ("4") -> {
 							ArrayList<String> Usernames = admin.get_users();
 							if (Usernames.get(0).equals("000")) {
@@ -137,7 +150,7 @@ public class TCPClient {
 			}
 		} else {
 			// 1o passo - criar socket
-			try (Socket s = new Socket(args[0], serverPort)) {
+			try (Socket s = new Socket(args[0], TCPserverPort)) {
 				System.out.println("SOCKET=" + s);
 
 				// 2o passo
