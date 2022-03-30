@@ -30,7 +30,7 @@ public class TCPClient {
 			try (Scanner sc = new Scanner(System.in)) {
 				while (true) { // while consola
 					// READ FROM SOCKET
-					String consola = "\nAdmin Console\n\n------------------------------------\n\n1: Registar novo utilizador\n2: Listar as directorias/ficheiros por utilizador\n3: Configurar o mecanismo de failover\n4: Listar detalhes sobre o armazenamento\n5: Validar a replicação dos dados entre os vários servidores\n0: Sair\n\n------------------------------------\n\n";
+					String consola = "\n Consola de Administração\n\n------------------------------------\n\n1: Registar novo utilizador\n2: Listar as directorias/ficheiros por utilizador\n3: Configurar o mecanismo de failover\n4: Listar detalhes sobre o armazenamento\n5: Validar a replicação dos dados entre os vários servidores\n0: Sair\n\n------------------------------------\n\n";
 					System.out.println(consola);
 
 					// READ STRING FROM KEYBOARD
@@ -85,9 +85,9 @@ public class TCPClient {
 						case ("2") -> {
 							ArrayList<String> Usernames = admin.get_users();
 							if (Usernames.get(0).equals("000")) {
-								System.out.println("No users!");
+								System.out.println("Não existem utilizadores!");
 							} else if (Usernames.get(0).equals("001")) {
-								System.out.println("File not found!");
+								System.out.println("Ficheiro não encontrado!");
 							} else {
 								for (int i = 0; i < Usernames.size(); i++) {
 									System.out.println(i + ": " + Usernames.get(i));
@@ -115,9 +115,9 @@ public class TCPClient {
 						case ("4") -> {
 							ArrayList<String> Usernames = admin.get_users();
 							if (Usernames.get(0).equals("000")) {
-								System.out.println("No users!");
+								System.out.println("Não existem utilizadores!");
 							} else if (Usernames.get(0).equals("001")) {
-								System.out.println("File not found!");
+								System.out.println("Ficheiro não encontrado!");
 							} else {
 								for (int i = 0; i < Usernames.size(); i++) {
 									System.out.println(i + ": " + Usernames.get(i));
@@ -138,15 +138,15 @@ public class TCPClient {
 							}
 						}
 						case ("0") -> {
-							System.out.println("Logged out successfully");
+							System.out.println("Saiu com sucesso!");
 							System.exit(0);
 						}
 					}
 				}
 			} catch (FileNotFoundException e) {
-				System.out.println("File not found!");
+				System.out.println("Ficheiro não encontrado!");
 			} catch (IOException e) {
-				System.out.println("Admin logged out\nNice!");
+				System.out.println("Admin saiu\n");
 			}
 		} else {
 			// 1o passo - criar socket
@@ -171,14 +171,14 @@ public class TCPClient {
 
 					// READ FROM SOCKET
 					String data = in.readUTF();
-					if (data.equals("Authenticated")) {
-						System.out.println("\nAuthenticated");
+					if (data.equals("Autenticado")) {
+						System.out.println("\nAutenticado");
 						break;
-					} else if (data.equals("This user is already Online.")) {
-						System.out.println("This user is already Online.\nYou can't have two sessions at once.");
+					} else if (data.equals("Este utilizador já está online.")) {
+						System.out.println("Este utilizador já está online.\nNão podes ter várias sessões ao mesmo tempo.");
 						return;
 					}
-					System.out.println("\nCouldn't authenticate, please try again.");
+					System.out.println("\nFalha a autenticar, tente denovo.");
 				}
 
 				// 3o passo
@@ -204,7 +204,7 @@ public class TCPClient {
 										System.out.println("\nNao estas autenticado!");
 										break;
 									} else if (data.equals("0")) {
-										System.out.println("\nPassword Changed!");
+										System.out.println("\nPassword mudou!");
 										break;
 									}
 
@@ -273,7 +273,7 @@ public class TCPClient {
 										}
 
 									} else {
-										System.out.println("This directory is Empty, like my soul :)");
+										System.out.println("Diretoria vazia");
 									}
 
 								}
@@ -287,19 +287,20 @@ public class TCPClient {
 									directories.add(data);
 									System.out.println(i + " - " + data);
 								}
-								System.out.println(lenI + " - Go back on the directories");
+								System.out.println(lenI + " - Voltar para a diretoria anterior");
 
 								String opt = sc.nextLine();
 								out.writeUTF(opt);
 								String fine = in.readUTF();
 								if (fine.equals("-1")) {
-									System.out.println("You can't go back from here!!");
+									System.out.println("Chegou á última diretoria!");
 								} else {
-									System.out.println("Nice Move!!");
+									System.out.println("Diretoria mudada!");
 								}
 							}
 							case ("5") -> {
-								String data = in.readUTF();
+								String data = System.getProperty("user.dir");
+								out.writeUTF(data);
 								File fileData = new File(data);
 								if (data.equals("-1")) {
 									System.out.println("\nNao estas autenticado!");
@@ -321,26 +322,26 @@ public class TCPClient {
 									directories.add(data);
 									System.out.println(i + " - " + data);
 								}
-								System.out.println(lenI + " - Go back on the directories");
-								System.out.println((lenI + 1) + " - Write directories");
+								System.out.println(lenI + " - Voltar para a diretoria anterior");
+								System.out.println((lenI + 1) + " - Escreva a diretoria");
 
 								String opt = sc.nextLine();
 								out.writeUTF(opt);
 								String fine = in.readUTF();
 								if (fine.equals("-1")) {
-									System.out.println("You can't go back from here!!");
+									System.out.println("Chegou á última diretoria!");
 								} else if (fine.equals("1")) {
 									System.out.println("Escreva a diretoria.");
 									String direct = sc.nextLine();
 									out.writeUTF(direct);
 									String doesItExist = in.readUTF();
 									if (doesItExist.equals("0")) {
-										System.out.println("High risk, low reward!-Elden Ring");
+										System.out.println("Mudou de diretoria!");
 									} else {
-										System.out.println("To bad!");
+										System.out.println("Diretoria não existe!");
 									}
 								} else {
-									System.out.println("Nice Move!!");
+									System.out.println("Diretoria mudada!");
 								}
 							}
 							case("7") -> {
@@ -381,7 +382,7 @@ public class TCPClient {
 									}
 									buffOutput.flush();
 									socketDown.close();
-									System.out.println("File downloaded successfully!");
+									System.out.println("Download do ficheiro completo!");
 
 								}
 							}
@@ -440,12 +441,12 @@ public class TCPClient {
 									}
 									out.flush();
 									socketup.close();
-									System.out.println("File uploaded successfully!");
+									System.out.println("Upload do ficheiro completo!");
 
 								}
 							}
 							case ("0") -> {
-								System.out.println("Logged out successfully");
+								System.out.println("Saiu com sucesso!");
 								System.exit(0);
 							}
 						}

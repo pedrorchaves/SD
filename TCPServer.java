@@ -55,10 +55,10 @@ public class TCPServer extends UnicastRemoteObject implements Admin, Runnable {
                 writerOfFiles.close();
                 new File(currentPath).mkdirs();
 
-                return "Sucess!";
+                return "Sucesso!";
             } catch (Exception e) {
-                System.out.println("Error when writing to File.");
-                return "Error when writing to File.";
+                System.out.println("Erro a escrever no ficheiro");
+                return "Erro a escrever no ficheiro";
             }
         } else {
 
@@ -66,7 +66,7 @@ public class TCPServer extends UnicastRemoteObject implements Admin, Runnable {
                 List<String> fileContent = new ArrayList<>(Files.readAllLines(pathName, StandardCharsets.UTF_8));
                 fileContent.set(ind, dados);
                 Files.write(pathName, fileContent, StandardCharsets.UTF_8);
-                return "Sucess!";
+                return "Sucesso!";
             } catch (IOException e) {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
@@ -199,7 +199,7 @@ public class TCPServer extends UnicastRemoteObject implements Admin, Runnable {
                 ByteArrayInputStream bais = new ByteArrayInputStream(rbuf, 0, dr.getLength());
                 DataInputStream dis = new DataInputStream(bais);
                 int n = dis.readInt();
-                System.out.println("Got: " + n + ".");
+                //System.out.println("Got: " + n + ".");
             }
             catch (SocketTimeoutException ste) {
                 failedheartbeats++;
@@ -248,9 +248,9 @@ public class TCPServer extends UnicastRemoteObject implements Admin, Runnable {
                     Admin h = new TCPServer();
                     Registry r = LocateRegistry.createRegistry(6969);
                     r.rebind("admin", h);
-                    System.out.println("RMI Server ready.");
+                    System.out.println("Servidor de RMI á espera.");
                 } catch (RemoteException re) {
-                    System.out.println("Exception in TCPServer.main: " + re);
+                    System.out.println("Exceção em TCPServer.run: " + re);
                 }
                 //rmi
     
@@ -265,7 +265,7 @@ public class TCPServer extends UnicastRemoteObject implements Admin, Runnable {
                                 Directories);
                     }
                 } catch (IOException e) {
-                    System.out.println("Listen:" + e.getMessage());
+                    System.out.println("A ouvir:" + e.getMessage());
                 }
             }
         }else if(thread_count == 2){ //udp
@@ -313,7 +313,7 @@ class UDPServer implements Runnable{
         if(thread_number == 1){
             try (DatagramSocket ds = new DatagramSocket(port)) {
                 InetAddress ia = InetAddress.getByName("localhost");
-                System.out.println("Server waiting");
+                System.out.println("Servidor UDP á espera");
                 while (true) {
                     byte buf[] = new byte[bufsize];
                     DatagramPacket dp = new DatagramPacket(buf, buf.length);
@@ -365,7 +365,7 @@ class UDPServer implements Runnable{
                     }
                     catch (IOException ste) {
                         failedheartbeats++;
-                        System.out.println("Failed heartbeats: " + failedheartbeats);
+                        System.out.println("Pings falhados: " + failedheartbeats);
                     }
                     Thread.sleep(period);
                 }
@@ -416,7 +416,7 @@ class Connection extends Thread {
             out = new DataOutputStream(clientSocket.getOutputStream());
             this.start();
         } catch (IOException e) {
-            System.out.println("Connection:" + e.getMessage());
+            System.out.println("Conexão:" + e.getMessage());
         }
     }
 
@@ -428,7 +428,7 @@ class Connection extends Thread {
             }
             writerOfFiles.close();
         } catch (Exception e) {
-            System.out.println("Error when writing to File.");
+            System.out.println("Erro a escrever no ficheiro.");
         }
     }
 
@@ -446,7 +446,7 @@ class Connection extends Thread {
 
             }
         } catch (FileNotFoundException e) {
-            System.out.println("hehe wrong filename");
+            System.out.println("Ficheiro errado");
         }
 
     }
@@ -462,7 +462,7 @@ class Connection extends Thread {
 
             }
         } catch (FileNotFoundException e) {
-            System.out.println("hehe wrong filename");
+            System.out.println("Ficheiro Errado");
         }
     }
 
@@ -476,13 +476,13 @@ class Connection extends Thread {
                 username = arrayString[0];
 
                 if (OnlineUsers.indexOf(username) == -1) {
-                    return "Authenticated";
+                    return "Autenticado";
                 }
-                return "This user is already Online.";
+                return "Este utilizador já está online.";
             }
 
         }
-        return "That user is not registered. Please speak with an admin.";
+        return "O utilizador não está registado. Por favor fale com um admin.";
 
     }
 
@@ -508,12 +508,12 @@ class Connection extends Thread {
             
             connectionDown.close();
             socketDown.close();
-            return "Download complete!";
+            return "Download completo!";
 
         } catch (IOException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
-            return "Something is missing?";
+            return "Algo está em falta";
         }
     }
 
@@ -549,12 +549,12 @@ class Connection extends Thread {
             out.flush();
             connectionDown.close();
             socketDown.close();
-            return "Download complete!";
+            return "Download completo!";
 
         } catch (IOException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
-            return "Something is missing?";
+            return "Algo está faltando";
         }
     }
     // =============================
@@ -574,7 +574,7 @@ class Connection extends Thread {
                 String UserPass = in.readUTF();
                 String Authentication = Authenticate(UserPass, Users, OnlineUsers);
                 System.out.println(Authentication);
-                if (Authentication.equals("Authenticated")) {
+                if (Authentication.equals("Autenticado")) {
                     out.writeUTF(Authentication);
                     String[] arrayString = UserPass.split(" ");
                     int Position = -1;
@@ -589,10 +589,10 @@ class Connection extends Thread {
 
                     thread_number[1] = Position;
                     OnlineUsers.add(Usernames.get(Position));
-                    System.out.println("User: " + Usernames.get(Position) + " has logged on\n");
+                    System.out.println("Utilizador: " + Usernames.get(Position) + " entrou\n");
 
                     break;
-                } else if (Authentication.equals("This user is already Online.")) {
+                } else if (Authentication.equals("Este utilizador já está autenticado.")) {
                     out.writeUTF(Authentication);
 
                 } else {
@@ -606,7 +606,7 @@ class Connection extends Thread {
             while (true) {
                 // an echo server
                 out.writeUTF(
-                        "\nConsole\n\n------------------------------------\n\n1: Change Password\n2: Configurar endereços e portos de servidores primario e secundario\n3: Listar os ficheiros que existem na diretoria atual do Server\n4: Mudar a diretoria atual do servidor\n5: Listar os ficheiros que existem na diretoria atual do cliente\n6: Mudar a diretoria atual do cliente\n7: Descarregar um ficheiro do servidor\n8: Carregar um ficheiro para o servidor\n0: Sair\n\n------------------------------------\n");
+                        "\nConsola\n\n------------------------------------\n\n1: Mudar Password\n2: Configurar endereços e portos de servidores primario e secundario\n3: Listar os ficheiros que existem na diretoria atual do Server\n4: Mudar a diretoria atual do servidor\n5: Listar os ficheiros que existem na diretoria atual do cliente\n6: Mudar a diretoria atual do cliente\n7: Descarregar um ficheiro do servidor\n8: Carregar um ficheiro para o servidor\n0: Sair\n\n------------------------------------\n");
                 String data = in.readUTF();
                 switch (data) {
                     case ("1") -> {
@@ -782,7 +782,7 @@ class Connection extends Thread {
                         Directories.set(thread_number[1], current);
                     }
                     case ("5") -> {
-                        out.writeUTF(currentLocalPath);
+                        currentLocalPath = in.readUTF();
                     }
                     case ("6") -> {
                         File file = new File(currentLocalPath);
@@ -891,11 +891,11 @@ class Connection extends Thread {
                  */
             }
         } catch (EOFException e) {
-            System.out.println("User[" + Usernames.get(thread_number[1]) + "] logged out, using CTRL + C");
+            System.out.println("Utilizador[" + Usernames.get(thread_number[1]) + "] saiu, usou CTRL + C");
             OnlineUsers.remove(Usernames.get(thread_number[1]));
         } catch (IOException e) {
-            System.out.println("User[" + Usernames.get(thread_number[1])
-                    + "] logged out\nMay the force be with you!\nHow u doin?");
+            System.out.println("Utilizador[" + Usernames.get(thread_number[1])
+                    + "] saiu\nMay the force be with you!\n");
             OnlineUsers.remove(Usernames.get(thread_number[1]));
         }
     }
