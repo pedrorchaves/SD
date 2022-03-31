@@ -16,6 +16,7 @@ public class TCPClient {
     private static int TCPserverPort = 6000;
 	private static int move = 0;
 	private static int checkBoth = 0;
+	private static int checkBothRMI = 0;
 
 	public static void main(String args[]) throws NotBoundException, UnknownHostException {
 		Scanner sca = new Scanner(System.in);
@@ -26,135 +27,161 @@ public class TCPClient {
 		}
 		if (args[0].equals("admin")) {
 			System.out.println("Hello Admin!");
-			try (Scanner sc = new Scanner(System.in)) {
-				Admin admin = (Admin) LocateRegistry.getRegistry(RMIserverPort).lookup("admin");
-				while (true) { // while consola
-					// READ FROM SOCKET
-					String consola = "\n Consola de Administração\n\n------------------------------------\n\n1: Registar novo utilizador\n2: Listar as directorias/ficheiros por utilizador\n3: Configurar o mecanismo de failover\n4: Listar detalhes sobre o armazenamento\n5: Validar a replicação dos dados entre os vários servidores\n0: Sair\n\n------------------------------------\n\n";
-					System.out.println(consola);
+			while(true){
+				Scanner sc = new Scanner(System.in);
+				try {
+					Admin admin = (Admin) LocateRegistry.getRegistry(RMIserverPort).lookup("admin");
+					if(checkBothRMI == 1){
+						System.out.println("Devido á perda de conexão, por favor escolha uma opção novamente!");
+					}
+					checkBothRMI = 0;
+				
+					while (true) { // while consola
+						// READ FROM SOCKET
+						String consola = "\n Consola de Administração\n\n------------------------------------\n\n1: Registar novo utilizador\n2: Listar as directorias/ficheiros por utilizador\n3: Configurar o mecanismo de failover\n4: Listar detalhes sobre o armazenamento\n5: Validar a replicação dos dados entre os vários servidores\n0: Sair\n\n------------------------------------\n\n";
+						System.out.println(consola);
 
-					// READ STRING FROM KEYBOARD
-					String texto = sc.nextLine();
+						// READ STRING FROM KEYBOARD
+						String texto = sc.nextLine();
 
-					switch (texto) {
-						case ("1") -> {
-							int opt = 1;
-							int ind = -1;
-							System.out.println("Username: ");
-							String Username = sca.nextLine();
-							ArrayList<String> Usernames = admin.get_users();
-							for (int i = 0; i < Usernames.size(); i++) {
-								String user = Usernames.get(i);
-								if (user.equals(Username)) {
-									System.out.println(
-											"Este utilizador já se encontra registado\nDeseja modificar os seus dados?\n0: Sim\n1: Nao");
-									String resposta = sca.nextLine();
-									if (resposta.strip().equals("0")) {
-										opt = 1;
-										ind = i;
-										break;
-									} else if (resposta.strip().equals("1")) {
-										opt = 0;
-										break;
-									} else {
-										System.out.println("Input invalido. Por favor tente de novo.");
+						switch (texto) {
+							case ("1") -> {
+								int opt = 1;
+								int ind = -1;
+								System.out.println("Username: ");
+								String Username = sca.nextLine();
+								ArrayList<String> Usernames = admin.get_users();
+								for (int i = 0; i < Usernames.size(); i++) {
+									String user = Usernames.get(i);
+									if (user.equals(Username)) {
+										System.out.println(
+												"Este utilizador já se encontra registado\nDeseja modificar os seus dados?\n0: Sim\n1: Nao");
+										String resposta = sca.nextLine();
+										if (resposta.strip().equals("0")) {
+											opt = 1;
+											ind = i;
+											break;
+										} else if (resposta.strip().equals("1")) {
+											opt = 0;
+											break;
+										} else {
+											System.out.println("Input invalido. Por favor tente de novo.");
+										}
 									}
 								}
-							}
-							if (opt == 1) {
-								System.out.println("Password: ");
-								String Pass = sca.nextLine();
-								System.out.println("Departamento: ");
-								String Dep = sca.nextLine();
-								System.out.println("Faculdade: ");
-								String Fac = sca.nextLine();
-								System.out.println("Contacto telefónico: ");
-								String Tel = sca.nextLine();
-								System.out.println("Morada: ");
-								String Mor = sca.nextLine();
-								System.out.println("Número do CC: ");
-								String NumCC = sca.nextLine();
-								System.out.println("Validade do CC: ");
-								String ValCC = sca.nextLine();
-								String dados = Username + " " + Pass + " " + Dep + " " + Fac + " " + Tel + " " + Mor
-										+ " " + NumCC + " " + ValCC;
-								String reg = admin.register(dados, ind);
-								System.out.println(reg);
-							}
-						}
-						case ("2") -> {
-							ArrayList<String> Usernames = admin.get_users();
-							if (Usernames.get(0).equals("000")) {
-								System.out.println("Não existem utilizadores!");
-							} else if (Usernames.get(0).equals("001")) {
-								System.out.println("Ficheiro não encontrado!");
-							} else {
-								for (int i = 0; i < Usernames.size(); i++) {
-									System.out.println(i + ": " + Usernames.get(i));
+								if (opt == 1) {
+									System.out.println("Password: ");
+									String Pass = sca.nextLine();
+									System.out.println("Departamento: ");
+									String Dep = sca.nextLine();
+									System.out.println("Faculdade: ");
+									String Fac = sca.nextLine();
+									System.out.println("Contacto telefónico: ");
+									String Tel = sca.nextLine();
+									System.out.println("Morada: ");
+									String Mor = sca.nextLine();
+									System.out.println("Número do CC: ");
+									String NumCC = sca.nextLine();
+									System.out.println("Validade do CC: ");
+									String ValCC = sca.nextLine();
+									String dados = Username + " " + Pass + " " + Dep + " " + Fac + " " + Tel + " " + Mor
+											+ " " + NumCC + " " + ValCC;
+									String reg = admin.register(dados, ind);
+									System.out.println(reg);
 								}
-								String User = sca.nextLine();
-								int User1 = Integer.parseInt(User);
+							}
+							case ("2") -> {
+								ArrayList<String> Usernames = admin.get_users();
+								if (Usernames.get(0).equals("000")) {
+									System.out.println("Não existem utilizadores!");
+								} else if (Usernames.get(0).equals("001")) {
+									System.out.println("Ficheiro não encontrado!");
+								} else {
+									for (int i = 0; i < Usernames.size(); i++) {
+										System.out.println(i + ": " + Usernames.get(i));
+									}
+									String User = sca.nextLine();
+									int User1 = Integer.parseInt(User);
 
-								String out = admin.directories_print(Usernames, User1);
+									String out = admin.directories_print(Usernames, User1);
+									System.out.println(out);
+								}
+
+							}
+							case("3") -> {
+								System.out.println("Escolha o número máximo de pings falhados possiveis!");
+								String User = sca.nextLine();
+								int n = Integer.parseInt(User);
+
+								System.out.println("Escolha o tempo máximo entre pings!");
+								String User1 = sca.nextLine();
+								int time = Integer.parseInt(User1);
+
+								String out = admin.failover_stats(n, time);
 								System.out.println(out);
 							}
-
-						}
-						case("3") -> {
-							System.out.println("Escolha o número máximo de pings falhados possiveis!");
-							String User = sca.nextLine();
-							int n = Integer.parseInt(User);
-
-							System.out.println("Escolha o tempo máximo entre pings!");
-							String User1 = sca.nextLine();
-							int time = Integer.parseInt(User1);
-
-							String out = admin.failover_stats(n, time);
-							System.out.println(out);
-						}
-						case ("4") -> {
-							ArrayList<String> Usernames = admin.get_users();
-							if (Usernames.get(0).equals("000")) {
-								System.out.println("Não existem utilizadores!");
-							} else if (Usernames.get(0).equals("001")) {
-								System.out.println("Ficheiro não encontrado!");
-							} else {
-								for (int i = 0; i < Usernames.size(); i++) {
-									System.out.println(i + ": " + Usernames.get(i));
-								}
-								System.out.println(Usernames.size() + ": Todos");
-								String User = sca.nextLine();
-								int User1 = Integer.parseInt(User);
-								if(User1 < Usernames.size() && User1 >= 0){
-									Long out = admin.memory_print(Usernames, User1);
-									System.out.println(String.format("O utilizador tem %,d  bytes usados!", out));
-								}else{
-									Long out = 0L;
+							case ("4") -> {
+								ArrayList<String> Usernames = admin.get_users();
+								if (Usernames.get(0).equals("000")) {
+									System.out.println("Não existem utilizadores!");
+								} else if (Usernames.get(0).equals("001")) {
+									System.out.println("Ficheiro não encontrado!");
+								} else {
 									for (int i = 0; i < Usernames.size(); i++) {
-										out += admin.memory_print(Usernames, i);
+										System.out.println(i + ": " + Usernames.get(i));
 									}
-									System.out.println(String.format("Os utilizadores tem %,d  bytes usados!", out));
+									System.out.println(Usernames.size() + ": Todos");
+									String User = sca.nextLine();
+									int User1 = Integer.parseInt(User);
+									if(User1 < Usernames.size() && User1 >= 0){
+										Long out = admin.memory_print(Usernames, User1);
+										System.out.println(String.format("O utilizador tem %,d  bytes usados!", out));
+									}else{
+										Long out = 0L;
+										for (int i = 0; i < Usernames.size(); i++) {
+											out += admin.memory_print(Usernames, i);
+										}
+										System.out.println(String.format("Os utilizadores tem %,d  bytes usados!", out));
+									}
 								}
 							}
-						}
-						case ("0") -> {
-							System.out.println("Saiu com sucesso!");
-							System.exit(0);
+							case ("0") -> {
+								System.out.println("Saiu com sucesso!");
+								System.exit(0);
+							}
 						}
 					}
+				} catch (AccessException e) {
+					System.out.println("Sem Acesso!");
+					break;
+				} catch (RemoteException e) {
+					if(RMIserverPort == 6969){
+						RMIserverPort = 6970;
+						checkBothRMI++;
+					}else if(RMIserverPort == 6970){
+						RMIserverPort = 6969;
+						checkBothRMI++;
+					}
+					if(checkBothRMI == 2){
+						System.out.println("Ambos servidores desligados!");
+						break;
+					}else{
+						System.out.println("Servidor principal desligado!");
+						System.out.println("Admin Desconectado!");
+					}
+				} catch (FileNotFoundException e) {
+					System.out.println("Ficheiro não encontrado!");
+					break;
 				}
-			} catch (FileNotFoundException e) {
-				System.out.println("Ficheiro não encontrado!");
-			} catch (IOException e) {
-				System.out.println("Admin saiu\n");
 			}
-		} else {
+		} else { // TCP
 			String UserPass = "";
 			String texto = "";
 			while(true){
 				// 1o passo - criar socket
 				try (Socket s = new Socket(args[0], TCPserverPort)) {
-					System.out.println("SOCKET=" + s);
+					//System.out.println("SOCKET=" + s);
+					System.out.println("Conectado ao servidor!\n");
 					checkBoth = 0;
 
 					// 2o passo
@@ -171,42 +198,50 @@ public class TCPClient {
 							String Pass = sca.nextLine();
 	
 							UserPass = Username.concat(" " + Pass);
-	
-						
+						}else if(move == 1){
+							move++;
 						}
+
 						// WRITE INTO THE SOCKET
 						out.writeUTF(UserPass);
 
 						// READ FROM SOCKET
 						String data = in.readUTF();
 						if (data.equals("Autenticado")) {
-							System.out.println("\nAutenticado");
+							if(move != 2){
+								System.out.println("\nAutenticado");
+							}
 							break;
 						} else if (data.equals("Este utilizador já está online.")) {
 							System.out.println("Este utilizador já está online.\nNão podes ter várias sessões ao mesmo tempo.");
 							return;
 						}
 						System.out.println("\nFalha a autenticar, tente denovo.");
+						move = 0;
 					}
 					
 					// 3o passo
 					//try () {
 						while (true) { // while consola
 							Scanner sc = new Scanner(System.in);
+							
 							// READ FROM SOCKET
-							
 							String consola = in.readUTF();
-							System.out.println(consola);
 
-							// READ STRING FROM KEYBOARD
+							if(move != 2){
+								System.out.println(consola);
+
+								// READ STRING FROM KEYBOARD
+								texto = sc.nextLine();
+							}else{
+								move++;
+							}
 							
-							texto = sc.nextLine();
-
 							// WRITE INTO THE SOCKET
 							out.writeUTF(texto);
 							
 							
-							System.out.println("Hey");	
+								
 							switch (texto) {
 								case ("1") -> {
 									while (true) {
@@ -470,7 +505,6 @@ public class TCPClient {
 					System.out.println("EOF:" + e.getMessage());
 					break;
 				} catch (IOException e) {
-					System.out.println("Servidor principal desligou!");
 					if(TCPserverPort == 6000){
 						TCPserverPort = 6001;
 						checkBoth++;
@@ -479,7 +513,10 @@ public class TCPClient {
 						checkBoth++;
 					}
 					if(checkBoth == 2){
+						System.out.println("Ambos servidores desligados!");
 						break;
+					}else{
+						System.out.println("Servidor principal desligado!");
 					}
 				}
 			}

@@ -21,7 +21,9 @@ import javax.xml.namespace.QName;
 public class TCPServer extends UnicastRemoteObject implements Admin, Runnable {
     UDPServer[] getPings = new UDPServer[2];
     private static int TCPserverPort = 6001;
-    private static int RMIserverPort = 6969;
+    private static int TCPserverPortPrim = 6000;
+    private static int RMIserverPort = 6970;
+    private static int RMIserverPortPrim = 6969;
     private static int UDPserverPortPrimer = 4200;
     private static int UDPserverPortSec = 4201;
 
@@ -243,18 +245,20 @@ public class TCPServer extends UnicastRemoteObject implements Admin, Runnable {
         if(thread_count == 1){ //tcp
             //rmi
             if(flag == 0){
-                //System.out.println("RMI");
-                try {
-                    Admin h = new TCPServer();
-                    Registry r = LocateRegistry.createRegistry(6969);
-                    r.rebind("admin", h);
-                    System.out.println("Servidor de RMI á espera.");
-                } catch (RemoteException re) {
-                    System.out.println("Exceção em TCPServer.run: " + re);
-                }
-                //rmi
-                TCPserverPort = 6000;
+                RMIserverPort = RMIserverPortPrim;
+                TCPserverPort = TCPserverPortPrim;
             }
+            //System.out.println("RMI");
+            try {
+                Admin h = new TCPServer();
+                Registry r = LocateRegistry.createRegistry(RMIserverPort);
+                r.rebind("admin", h);
+                System.out.println("Servidor de RMI á espera.");
+            } catch (RemoteException re) {
+                System.out.println("Exceção em TCPServer.run: " + re);
+            }
+            //rmi
+
             try (ServerSocket listenSocket = new ServerSocket(TCPserverPort)) {
                 System.out.println("A escuta no porto 6000");
                 System.out.println("LISTEN SOCKET=" + listenSocket);
