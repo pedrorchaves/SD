@@ -527,6 +527,7 @@ class Connection extends Thread {
             InetAddress IA = InetAddress.getByName(localhost);
 
             DataOutputStream out = new DataOutputStream(connectionDown.getOutputStream());
+            
             FileInputStream fileInput = new FileInputStream(ficheiro);
             BufferedInputStream buffInput = new BufferedInputStream(fileInput);
 

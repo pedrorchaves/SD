@@ -1,12 +1,10 @@
 //package sockets;
 
-import java.io.File;
-import java.io.FileNotFoundException;
 import java.rmi.*;
 import java.rmi.registry.LocateRegistry;
 import java.util.*;
 import java.net.*;
-
+import java.net.UnknownHostException;
 import java.util.*;
 
 import javax.sound.sampled.SourceDataLine;
@@ -16,8 +14,10 @@ import java.io.*;
 public class TCPClient {
     private static int RMIserverPort = 6969;
     private static int TCPserverPort = 6000;
+	private static int move = 0;
+	private static int checkBoth = 0;
 
-	public static void main(String args[]) throws RemoteException, NotBoundException {
+	public static void main(String args[]) throws NotBoundException, UnknownHostException {
 		Scanner sca = new Scanner(System.in);
 		// args[0] <- hostname of destination
 		if (args.length == 0) {
@@ -26,8 +26,8 @@ public class TCPClient {
 		}
 		if (args[0].equals("admin")) {
 			System.out.println("Hello Admin!");
-			Admin admin = (Admin) LocateRegistry.getRegistry(RMIserverPort).lookup("admin");
 			try (Scanner sc = new Scanner(System.in)) {
+				Admin admin = (Admin) LocateRegistry.getRegistry(RMIserverPort).lookup("admin");
 				while (true) { // while consola
 					// READ FROM SOCKET
 					String consola = "\n Consola de Administração\n\n------------------------------------\n\n1: Registar novo utilizador\n2: Listar as directorias/ficheiros por utilizador\n3: Configurar o mecanismo de failover\n4: Listar detalhes sobre o armazenamento\n5: Validar a replicação dos dados entre os vários servidores\n0: Sair\n\n------------------------------------\n\n";
@@ -149,318 +149,338 @@ public class TCPClient {
 				System.out.println("Admin saiu\n");
 			}
 		} else {
-			// 1o passo - criar socket
-			try (Socket s = new Socket(args[0], TCPserverPort)) {
-				System.out.println("SOCKET=" + s);
+			String UserPass = "";
+			String texto = "";
+			while(true){
+				// 1o passo - criar socket
+				try (Socket s = new Socket(args[0], TCPserverPort)) {
+					System.out.println("SOCKET=" + s);
+					checkBoth = 0;
 
-				// 2o passo
-				DataInputStream in = new DataInputStream(s.getInputStream());
-				DataOutputStream out = new DataOutputStream(s.getOutputStream());
+					// 2o passo
+					DataInputStream in = new DataInputStream(s.getInputStream());
+					DataOutputStream out = new DataOutputStream(s.getOutputStream());
 
-				// READ user and password FROM KEYBOARD
-				while (true) {
-					System.out.println("Username: ");
-					String Username = sca.nextLine();
-					System.out.println("Password: ");
-					String Pass = sca.nextLine();
-
-					String UserPass = Username.concat(" " + Pass);
-
-					// WRITE INTO THE SOCKET
-					out.writeUTF(UserPass);
-
-					// READ FROM SOCKET
-					String data = in.readUTF();
-					if (data.equals("Autenticado")) {
-						System.out.println("\nAutenticado");
-						break;
-					} else if (data.equals("Este utilizador já está online.")) {
-						System.out.println("Este utilizador já está online.\nNão podes ter várias sessões ao mesmo tempo.");
-						return;
-					}
-					System.out.println("\nFalha a autenticar, tente denovo.");
-				}
-
-				// 3o passo
-				try (Scanner sc = new Scanner(System.in)) {
-					while (true) { // while consola
-						// READ FROM SOCKET
-						String consola = in.readUTF();
-						System.out.println(consola);
-
-						// READ STRING FROM KEYBOARD
-						String texto = sc.nextLine();
-
+					// READ user and password FROM KEYBOARD
+					while (true) {
+						if(move == 0){
+							move++;
+							System.out.println("Username: ");
+							String Username = sca.nextLine();
+							System.out.println("Password: ");
+							String Pass = sca.nextLine();
+	
+							UserPass = Username.concat(" " + Pass);
+	
+						
+						}
 						// WRITE INTO THE SOCKET
-						out.writeUTF(texto);
+						out.writeUTF(UserPass);
 
-						switch (texto) {
-							case ("1") -> {
-								while (true) {
-									// READ request
+						// READ FROM SOCKET
+						String data = in.readUTF();
+						if (data.equals("Autenticado")) {
+							System.out.println("\nAutenticado");
+							break;
+						} else if (data.equals("Este utilizador já está online.")) {
+							System.out.println("Este utilizador já está online.\nNão podes ter várias sessões ao mesmo tempo.");
+							return;
+						}
+						System.out.println("\nFalha a autenticar, tente denovo.");
+					}
+					
+					// 3o passo
+					//try () {
+						while (true) { // while consola
+							Scanner sc = new Scanner(System.in);
+							// READ FROM SOCKET
+							
+							String consola = in.readUTF();
+							System.out.println(consola);
+
+							// READ STRING FROM KEYBOARD
+							
+							texto = sc.nextLine();
+
+							// WRITE INTO THE SOCKET
+							out.writeUTF(texto);
+							
+							
+							System.out.println("Hey");	
+							switch (texto) {
+								case ("1") -> {
+									while (true) {
+										// READ request
+										String data = in.readUTF();
+
+										if (data.equals("-1")) {
+											System.out.println("\nNao estas autenticado!");
+											break;
+										} else if (data.equals("0")) {
+											System.out.println("\nPassword mudou!");
+											break;
+										}
+
+										// DISPLAY WHAT WAS READ
+										System.out.println(data);
+
+										// READ STRING FROM KEYBOARD
+										String newPass = sc.nextLine();
+
+										// WRITE password
+										out.writeUTF(newPass);
+									}
+									break;
+								} /*
+									* case ("2") -> {
+									* System.out.
+									* println("Que servidor deseja alterar?\n0 - Principal \n1 - Secundario\n");
+									* String resp = sc.nextLine();
+									* out.writeUTF(resp);
+									* while(true){
+									* System.out.
+									* println("O que quer alterar?\n0 - Endereco IP\n1 - Porto\n2 - IP e Porto\n3 - Nenhum\n"
+									* );
+									* String opt = sc.nextLine();
+									* out.writeUTF(opt);
+									* if(opt.equals("0")){
+									* System.out.println("Escreva o novo IP\n");
+									* String newIP = sc.nextLine();
+									* out.writeUTF(newIP);
+									* }else if(opt.equals("1")){
+									* System.out.println("Escreva o novo Porto\n");
+									* String newIP = sc.nextLine();
+									* out.writeUTF(newIP);
+									* }else if(opt.equals("2")){
+									* System.out.println("Escreva IP:Porto\n");
+									* String newIP = sc.nextLine();
+									* out.writeUTF(newIP);
+									* }else if(opt.equals("3")){
+									* System.out.println("Leaving already\n");
+									* break;
+									* }else{
+									* System.out.println("Invalid Option NOOB!");
+									* continue;
+									* }
+									* String check = in.readUTF();
+									* if(check.equals("-1")){
+									* System.out.println("Thats not an IPv4!!");
+									* }else if(check.equals("0")){
+									* System.out.println("Got it!");
+									* break;
+									* }
+									* }
+									* }
+									*/
+								case ("3") -> {
 									String data = in.readUTF();
-
+									File fileData = new File(data);
 									if (data.equals("-1")) {
 										System.out.println("\nNao estas autenticado!");
-										break;
-									} else if (data.equals("0")) {
-										System.out.println("\nPassword mudou!");
-										break;
+									} else {
+										String[] lista = fileData.list();
+										System.out.println("Ficheiros na diretoria:");
+										if (lista.length >= 1) {
+											for (String ficheiro : lista) {
+												System.out.println(ficheiro);
+											}
+
+										} else {
+											System.out.println("Diretoria vazia");
+										}
+
 									}
-
-									// DISPLAY WHAT WAS READ
-									System.out.println(data);
-
-									// READ STRING FROM KEYBOARD
-									String newPass = sc.nextLine();
-
-									// WRITE password
-									out.writeUTF(newPass);
 								}
-								break;
-							} /*
-								 * case ("2") -> {
-								 * System.out.
-								 * println("Que servidor deseja alterar?\n0 - Principal \n1 - Secundario\n");
-								 * String resp = sc.nextLine();
-								 * out.writeUTF(resp);
-								 * while(true){
-								 * System.out.
-								 * println("O que quer alterar?\n0 - Endereco IP\n1 - Porto\n2 - IP e Porto\n3 - Nenhum\n"
-								 * );
-								 * String opt = sc.nextLine();
-								 * out.writeUTF(opt);
-								 * if(opt.equals("0")){
-								 * System.out.println("Escreva o novo IP\n");
-								 * String newIP = sc.nextLine();
-								 * out.writeUTF(newIP);
-								 * }else if(opt.equals("1")){
-								 * System.out.println("Escreva o novo Porto\n");
-								 * String newIP = sc.nextLine();
-								 * out.writeUTF(newIP);
-								 * }else if(opt.equals("2")){
-								 * System.out.println("Escreva IP:Porto\n");
-								 * String newIP = sc.nextLine();
-								 * out.writeUTF(newIP);
-								 * }else if(opt.equals("3")){
-								 * System.out.println("Leaving already\n");
-								 * break;
-								 * }else{
-								 * System.out.println("Invalid Option NOOB!");
-								 * continue;
-								 * }
-								 * String check = in.readUTF();
-								 * if(check.equals("-1")){
-								 * System.out.println("Thats not an IPv4!!");
-								 * }else if(check.equals("0")){
-								 * System.out.println("Got it!");
-								 * break;
-								 * }
-								 * }
-								 * }
-								 */
-							case ("3") -> {
-								String data = in.readUTF();
-								File fileData = new File(data);
-								if (data.equals("-1")) {
-									System.out.println("\nNao estas autenticado!");
-								} else {
-									String[] lista = fileData.list();
-									System.out.println("Ficheiros na diretoria:");
-									if (lista.length >= 1) {
+								case ("4") -> {
+									String len = in.readUTF();
+									int lenI = Integer.parseInt(len);
+									ArrayList<String> directories = new ArrayList<>();
+									for (int i = 0; i < lenI; i++) {
+										String data = in.readUTF();
+										directories.add(data);
+										System.out.println(i + " - " + data);
+									}
+									System.out.println(lenI + " - Voltar para a diretoria anterior");
+
+									String opt = sc.nextLine();
+									out.writeUTF(opt);
+									String fine = in.readUTF();
+									if (fine.equals("-1")) {
+										System.out.println("Chegou á última diretoria!");
+									} else {
+										System.out.println("Diretoria mudada!");
+									}
+								}
+								case ("5") -> {
+									String data = System.getProperty("user.dir");
+									out.writeUTF(data);
+									File fileData = new File(data);
+									if (data.equals("-1")) {
+										System.out.println("\nNao estas autenticado!");
+									} else {
+										String[] lista = fileData.list();
+										System.out.println("Ficheiros na diretoria:");
 										for (String ficheiro : lista) {
 											System.out.println(ficheiro);
 										}
 
+									}
+								}
+								case ("6") -> {
+									String len = in.readUTF();
+									int lenI = Integer.parseInt(len);
+									ArrayList<String> directories = new ArrayList<>();
+									for (int i = 0; i < lenI; i++) {
+										String data = in.readUTF();
+										directories.add(data);
+										System.out.println(i + " - " + data);
+									}
+									System.out.println(lenI + " - Voltar para a diretoria anterior");
+									System.out.println((lenI + 1) + " - Escreva a diretoria");
+
+									String opt = sc.nextLine();
+									out.writeUTF(opt);
+									String fine = in.readUTF();
+									if (fine.equals("-1")) {
+										System.out.println("Chegou á última diretoria!");
+									} else if (fine.equals("1")) {
+										System.out.println("Escreva a diretoria.");
+										String direct = sc.nextLine();
+										out.writeUTF(direct);
+										String doesItExist = in.readUTF();
+										if (doesItExist.equals("0")) {
+											System.out.println("Mudou de diretoria!");
+										} else {
+											System.out.println("Diretoria não existe!");
+										}
 									} else {
-										System.out.println("Diretoria vazia");
+										System.out.println("Diretoria mudada!");
 									}
-
 								}
-							}
-							case ("4") -> {
-								String len = in.readUTF();
-								int lenI = Integer.parseInt(len);
-								ArrayList<String> directories = new ArrayList<>();
-								for (int i = 0; i < lenI; i++) {
+								case("7") -> {
 									String data = in.readUTF();
-									directories.add(data);
-									System.out.println(i + " - " + data);
-								}
-								System.out.println(lenI + " - Voltar para a diretoria anterior");
-
-								String opt = sc.nextLine();
-								out.writeUTF(opt);
-								String fine = in.readUTF();
-								if (fine.equals("-1")) {
-									System.out.println("Chegou á última diretoria!");
-								} else {
-									System.out.println("Diretoria mudada!");
-								}
-							}
-							case ("5") -> {
-								String data = System.getProperty("user.dir");
-								out.writeUTF(data);
-								File fileData = new File(data);
-								if (data.equals("-1")) {
-									System.out.println("\nNao estas autenticado!");
-								} else {
-									String[] lista = fileData.list();
-									System.out.println("Ficheiros na diretoria:");
-									for (String ficheiro : lista) {
-										System.out.println(ficheiro);
-									}
-
-								}
-							}
-							case ("6") -> {
-								String len = in.readUTF();
-								int lenI = Integer.parseInt(len);
-								ArrayList<String> directories = new ArrayList<>();
-								for (int i = 0; i < lenI; i++) {
-									String data = in.readUTF();
-									directories.add(data);
-									System.out.println(i + " - " + data);
-								}
-								System.out.println(lenI + " - Voltar para a diretoria anterior");
-								System.out.println((lenI + 1) + " - Escreva a diretoria");
-
-								String opt = sc.nextLine();
-								out.writeUTF(opt);
-								String fine = in.readUTF();
-								if (fine.equals("-1")) {
-									System.out.println("Chegou á última diretoria!");
-								} else if (fine.equals("1")) {
-									System.out.println("Escreva a diretoria.");
-									String direct = sc.nextLine();
-									out.writeUTF(direct);
-									String doesItExist = in.readUTF();
-									if (doesItExist.equals("0")) {
-										System.out.println("Mudou de diretoria!");
+									File fileData = new File(data);
+									if (data.equals("-1")) {
+										System.out.println("\nNao estas autenticado!");
 									} else {
-										System.out.println("Diretoria não existe!");
+										String[] lista = fileData.list();
+										File[] files = fileData.listFiles();
+										int[] arrayInds = new int[lista.length];
+										int k = 0;
+										System.out.println("Qual ficheiro quer carregar?\n");
+										for (int i = 0; i<lista.length; i++) {
+											if(files[i].isFile()){
+												arrayInds[k] = i;
+												System.out.println(k + ": " + lista[i]);
+												k++;
+											}
+										}
+										String currentDir = in.readUTF();
+										String fileInd = sc.nextLine();
+										Integer fileIndex = Integer.parseInt(fileInd);
+										out.writeUTF(Integer.toString(arrayInds[fileIndex]));
+
+										System.out.println("A descarregar o ficheiro: " + lista[arrayInds[fileIndex]].toString());
+										
+										Integer size = 100;
+										Socket socketDown = new Socket(args[0], 6969);
+										byte[] dataDown = new byte[size];
+
+										FileOutputStream fileOutput = new FileOutputStream(currentDir + "\\" + lista[arrayInds[fileIndex]].toString());
+										BufferedOutputStream buffOutput = new BufferedOutputStream(fileOutput);
+										DataInputStream inp = new DataInputStream(socketDown.getInputStream());
+										int atual = 0;
+										while((atual=inp.read(dataDown))!=-1){
+											buffOutput.write(dataDown, 0, atual);
+										}
+										buffOutput.flush();
+										socketDown.close();
+										System.out.println("Download do ficheiro completo!");
+
 									}
-								} else {
-									System.out.println("Diretoria mudada!");
 								}
-							}
-							case("7") -> {
-								String data = in.readUTF();
-								File fileData = new File(data);
-								if (data.equals("-1")) {
-									System.out.println("\nNao estas autenticado!");
-								} else {
-									String[] lista = fileData.list();
-									File[] files = fileData.listFiles();
-									int[] arrayInds = new int[lista.length];
-									int k = 0;
-									System.out.println("Qual ficheiro quer carregar?\n");
-									for (int i = 0; i<lista.length; i++) {
-										if(files[i].isFile()){
-											arrayInds[k] = i;
-											System.out.println(k + ": " + lista[i]);
-											k++;
+								case("8") -> {
+									String data = in.readUTF();
+									File fileData = new File(data); //ficheiro local
+									if (data.equals("-1")) {
+										System.out.println("\nNao estas autenticado!");
+									} else {
+										String[] lista = fileData.list();
+										File[] files = fileData.listFiles();
+										int[] arrayInds = new int[lista.length];
+										int k = 0;
+										System.out.println("Qual ficheiro quer carregar?\n");
+										for (int i = 0; i<lista.length; i++) {
+											if(files[i].isFile()){
+												arrayInds[k] = i;
+												System.out.println(k + ": " + lista[i]);
+												k++;
+											}
 										}
+										String currentDir = in.readUTF(); //pasta server
+										String fileInd = sc.nextLine();
+										Integer fileIndex = Integer.parseInt(fileInd);
+										out.writeUTF(Integer.toString(arrayInds[fileIndex]));
+
+										System.out.println("A carregar o ficheiro: " + lista[arrayInds[fileIndex]].toString());
+										
+										Integer size = 100;
+										Socket socketup = new Socket(args[0], 4200);
+										
+
+										FileInputStream fileInput = new FileInputStream(data + "\\" + lista[arrayInds[fileIndex]].toString());
+										BufferedInputStream buffInput = new BufferedInputStream(fileInput);
+
+										DataOutputStream out1 = new DataOutputStream(socketup.getOutputStream());
+										long atual = 0;
+										byte[] data1;
+										
+										File file = new File(data + "\\" + lista[arrayInds[fileIndex]].toString());
+										long fileSize = file.length();
+										
+										while(atual != fileSize){
+											if(fileSize - atual >= size){
+												atual+=size;
+											}
+											else{
+												size = (int)(fileSize-atual);
+												atual = fileSize;
+											}
+
+											data1 = new byte[size];
+											buffInput.read(data1,0,size);
+											out1.write(data1);
+										
+										}
+										out.flush();
+										socketup.close();
+										System.out.println("Upload do ficheiro completo!");
+
 									}
-									String currentDir = in.readUTF();
-									String fileInd = sc.nextLine();
-									Integer fileIndex = Integer.parseInt(fileInd);
-									out.writeUTF(Integer.toString(arrayInds[fileIndex]));
-
-                            		System.out.println("A descarregar o ficheiro: " + lista[arrayInds[fileIndex]].toString());
-									
-									Integer size = 100;
-									Socket socketDown = new Socket(args[0], 6969);
-									byte[] dataDown = new byte[size];
-
-									FileOutputStream fileOutput = new FileOutputStream(currentDir + "\\" + lista[arrayInds[fileIndex]].toString());
-									BufferedOutputStream buffOutput = new BufferedOutputStream(fileOutput);
-									DataInputStream inp = new DataInputStream(socketDown.getInputStream());
-									int atual = 0;
-									while((atual=inp.read(dataDown))!=-1){
-										buffOutput.write(dataDown, 0, atual);
-									}
-									buffOutput.flush();
-									socketDown.close();
-									System.out.println("Download do ficheiro completo!");
-
 								}
-							}
-							case("8") -> {
-								String data = in.readUTF();
-								File fileData = new File(data); //ficheiro local
-								if (data.equals("-1")) {
-									System.out.println("\nNao estas autenticado!");
-								} else {
-									String[] lista = fileData.list();
-									File[] files = fileData.listFiles();
-									int[] arrayInds = new int[lista.length];
-									int k = 0;
-									System.out.println("Qual ficheiro quer carregar?\n");
-									for (int i = 0; i<lista.length; i++) {
-										if(files[i].isFile()){
-											arrayInds[k] = i;
-											System.out.println(k + ": " + lista[i]);
-											k++;
-										}
-									}
-									String currentDir = in.readUTF(); //pasta server
-									String fileInd = sc.nextLine();
-									Integer fileIndex = Integer.parseInt(fileInd);
-									out.writeUTF(Integer.toString(arrayInds[fileIndex]));
-
-                            		System.out.println("A carregar o ficheiro: " + lista[arrayInds[fileIndex]].toString());
-									
-									Integer size = 100;
-									Socket socketup = new Socket(args[0], 4200);
-									
-
-									FileInputStream fileInput = new FileInputStream(data + "\\" + lista[arrayInds[fileIndex]].toString());
-									BufferedInputStream buffInput = new BufferedInputStream(fileInput);
-
-									DataOutputStream out1 = new DataOutputStream(socketup.getOutputStream());
-									long atual = 0;
-									byte[] data1;
-									
-									File file = new File(data + "\\" + lista[arrayInds[fileIndex]].toString());
-									long fileSize = file.length();
-									
-									while(atual != fileSize){
-										if(fileSize - atual >= size){
-											atual+=size;
-										}
-										else{
-											size = (int)(fileSize-atual);
-											atual = fileSize;
-										}
-
-										data1 = new byte[size];
-										buffInput.read(data1,0,size);
-										out1.write(data1);
-									
-									}
-									out.flush();
-									socketup.close();
-									System.out.println("Upload do ficheiro completo!");
-
+								case ("0") -> {
+									System.out.println("Saiu com sucesso!");
+									System.exit(0);
 								}
-							}
-							case ("0") -> {
-								System.out.println("Saiu com sucesso!");
-								System.exit(0);
 							}
 						}
-					}
-				}
+					//}
 
-			} catch (EOFException e) {
-				System.out.println("EOF:" + e.getMessage());
-			} catch (IOException e) {
-				System.out.println("IO:" + e.getMessage());
-				if(TCPserverPort == 6000){
-					TCPserverPort = 6001;
-				}else if(TCPserverPort == 6001){
-					TCPserverPort = 6000;
+				} catch (EOFException e) {
+					System.out.println("EOF:" + e.getMessage());
+					break;
+				} catch (IOException e) {
+					System.out.println("Servidor principal desligou!");
+					if(TCPserverPort == 6000){
+						TCPserverPort = 6001;
+						checkBoth++;
+					}else if(TCPserverPort == 6001){
+						TCPserverPort = 6000;
+						checkBoth++;
+					}
+					if(checkBoth == 2){
+						break;
+					}
 				}
 			}
 		}
