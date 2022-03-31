@@ -457,6 +457,11 @@ public class TCPClient {
 				System.out.println("EOF:" + e.getMessage());
 			} catch (IOException e) {
 				System.out.println("IO:" + e.getMessage());
+				if(TCPserverPort == 6000){
+					TCPserverPort = 6001;
+				}else if(TCPserverPort == 6001){
+					TCPserverPort = 6000;
+				}
 			}
 		}
 	}

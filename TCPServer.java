@@ -20,7 +20,7 @@ import javax.xml.namespace.QName;
 
 public class TCPServer extends UnicastRemoteObject implements Admin, Runnable {
     UDPServer[] getPings = new UDPServer[2];
-    private static int TCPserverPort = 6000;
+    private static int TCPserverPort = 6001;
     private static int RMIserverPort = 6969;
     private static int UDPserverPortPrimer = 4200;
     private static int UDPserverPortSec = 4201;
@@ -253,23 +253,24 @@ public class TCPServer extends UnicastRemoteObject implements Admin, Runnable {
                     System.out.println("Exceção em TCPServer.run: " + re);
                 }
                 //rmi
-    
-                try (ServerSocket listenSocket = new ServerSocket(TCPserverPort)) {
-                    System.out.println("A escuta no porto 6000");
-                    System.out.println("LISTEN SOCKET=" + listenSocket);
-                    while (true) {
-                        Socket clientSocket = listenSocket.accept(); // BLOQUEANTE
-                        System.out.println("CLIENT_SOCKET (created at accept())=" + clientSocket);
-                        numero++;
-                        new Connection(listenSocket, TCPserverPort, clientSocket, numero, Usernames, Users, OnlineUsers,
-                                Directories);
-                    }
-                } catch (IOException e) {
-                    System.out.println("A ouvir:" + e.getMessage());
-                }
+                TCPserverPort = 6000;
             }
+            try (ServerSocket listenSocket = new ServerSocket(TCPserverPort)) {
+                System.out.println("A escuta no porto 6000");
+                System.out.println("LISTEN SOCKET=" + listenSocket);
+                while (true) {
+                    Socket clientSocket = listenSocket.accept(); // BLOQUEANTE
+                    System.out.println("CLIENT_SOCKET (created at accept())=" + clientSocket);
+                    numero++;
+                    new Connection(listenSocket, TCPserverPort, clientSocket, numero, Usernames, Users, OnlineUsers,
+                            Directories);
+                }
+            } catch (IOException e) {
+                System.out.println("A ouvir:" + e.getMessage());
+            }
+            
         }else if(thread_count == 2){ //udp
-            //criar 2 threads, 1 para receber pings e 1 para enviar
+            //criar 3 threads, 1 para receber pings e 1 para enviar e 1 para enviar copias de ficheiros
             for(int i = 0;i<2;i++){
                 getPings[i] = new UDPServer();
                 Thread thread = new Thread(getPings[i]);
@@ -379,6 +380,8 @@ class UDPServer implements Runnable{
                 // TODO Auto-generated catch block
                 e.printStackTrace();
             }
+        }else if(thread_number == 3){
+            //enviar ficheiros
         }
 
     }
