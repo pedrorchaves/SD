@@ -44,7 +44,7 @@ public class TCPServer extends UnicastRemoteObject implements Admin, Runnable {
         super();
     }
 
-    public String register(String dados, int ind) throws RemoteException {
+    public synchronized String register(String dados, int ind) throws RemoteException {
         String currentPath = System.getProperty("user.dir");
         String[] temp = dados.split(" ");
         currentPath = currentPath + "\\directories\\" + temp[0] + "\\home";
@@ -78,7 +78,7 @@ public class TCPServer extends UnicastRemoteObject implements Admin, Runnable {
 
     }
 
-    public String directories_print(ArrayList<String> Usernames, int User1) throws RemoteException {
+    public synchronized String directories_print(ArrayList<String> Usernames, int User1) throws RemoteException {
 
         String currentPath = System.getProperty("user.dir");
         String current = "";
@@ -98,7 +98,7 @@ public class TCPServer extends UnicastRemoteObject implements Admin, Runnable {
         return out;
     }
 
-    public ArrayList<String> get_users() throws RemoteException {
+    public synchronized ArrayList<String> get_users() throws RemoteException {
         ArrayList<String> Usernames = new ArrayList<>();
         String out = "";
         // Reading Usernames and Passwords from File
@@ -123,7 +123,7 @@ public class TCPServer extends UnicastRemoteObject implements Admin, Runnable {
         return Usernames;
     }
 
-    public Long memory_print(ArrayList<String> Usernames, int User1) throws java.rmi.RemoteException {
+    public synchronized Long memory_print(ArrayList<String> Usernames, int User1) throws java.rmi.RemoteException {
         String currentPath = System.getProperty("user.dir");
         String current = "";
         Long bytes = 0L;
@@ -132,7 +132,7 @@ public class TCPServer extends UnicastRemoteObject implements Admin, Runnable {
         return bytes;
     }
 
-    private long getFolderSize(File folder) {
+    private synchronized long getFolderSize(File folder) {
         long length = 0;
         File[] files = folder.listFiles();
 
@@ -149,7 +149,7 @@ public class TCPServer extends UnicastRemoteObject implements Admin, Runnable {
         return length;
     }
 
-    private String getFolders(File folder, String User, Integer prof) {
+    private synchronized String getFolders(File folder, String User, Integer prof) {
         String out = "";
         File[] files = folder.listFiles();
 
@@ -257,7 +257,7 @@ public class TCPServer extends UnicastRemoteObject implements Admin, Runnable {
             } catch (RemoteException re) {
                 System.out.println("Exceção em TCPServer.run: " + re);
             }
-            //rmi
+            //TCP
 
             try (ServerSocket listenSocket = new ServerSocket(TCPserverPort)) {
                 System.out.println("A escuta no porto 6000");
@@ -427,7 +427,7 @@ class Connection extends Thread {
         }
     }
 
-    public static void writeToFile(String FileName, ArrayList<String> Users) {
+    public synchronized static void writeToFile(String FileName, ArrayList<String> Users) {
         try (FileWriter writerOfFiles = new FileWriter(FileName)) {
             writerOfFiles.write("");
             for (int i = 0; i < Users.size(); i++) {
@@ -439,7 +439,7 @@ class Connection extends Thread {
         }
     }
 
-    public static void ReadFromFileAuth(String FileName, ArrayList<String> Users, ArrayList<String> Usernames) {
+    public synchronized static void ReadFromFileAuth(String FileName, ArrayList<String> Users, ArrayList<String> Usernames) {
         Users.clear();
         Usernames.clear();
         // Reading Usernames and Passwords from File
@@ -458,7 +458,7 @@ class Connection extends Thread {
 
     }
 
-    public static void ReadFromFile(String FileName, ArrayList<String> directories) {
+    public synchronized static void ReadFromFile(String FileName, ArrayList<String> directories) {
         directories.clear();
         File dirs = new File(FileName);
         try (Scanner readFile = new Scanner(dirs)) {
@@ -473,7 +473,7 @@ class Connection extends Thread {
         }
     }
 
-    public static String Authenticate(String UserPass, ArrayList<String> Users, ArrayList<String> OnlineUsers) {
+    public synchronized static String Authenticate(String UserPass, ArrayList<String> Users, ArrayList<String> OnlineUsers) {
 
         String[] arrayString = UserPass.split(" ");
 
@@ -493,7 +493,7 @@ class Connection extends Thread {
 
     }
 
-    public static String uploadFiles(String destination, int portDown, int size, String localhost){
+    public synchronized static String uploadFiles(String destination, int portDown, int size, String localhost){
         try {
             
             ServerSocket socketDown = new ServerSocket(portDown);
@@ -524,7 +524,7 @@ class Connection extends Thread {
         }
     }
 
-    public static String downloadFiles(File ficheiro, int portDown, int size, String localhost){
+    public synchronized static String downloadFiles(File ficheiro, int portDown, int size, String localhost){
         try {
             ServerSocket socketDown = new ServerSocket(portDown);
             Socket connectionDown = socketDown.accept();
@@ -566,7 +566,7 @@ class Connection extends Thread {
         }
     }
     // =============================
-    public void run() {
+    public synchronized void run() {
 
         ReadFromFileAuth(FileName, Users, Usernames);
         ReadFromFile("dir.txt", Directories);
@@ -747,6 +747,7 @@ class Connection extends Thread {
                         }
                     }
                     case ("4") -> {
+                        Path pathName = Paths.get("dir.txt");
                         ReadFromFileAuth("auth.txt", Users, Usernames);
                         String current = Directories.get(thread_number[1]);
                         File file = new File(currentPath + "\\" + "directories" + "\\" + current);
@@ -787,6 +788,9 @@ class Connection extends Thread {
                             current = str.toString();
                             out.writeUTF("0");
                         }
+                        List<String> fileContent = new ArrayList<>(Files.readAllLines(pathName, StandardCharsets.UTF_8));
+                        fileContent.set(thread_number[1], Usernames.get(thread_number[1]) + " " + current);
+                        Files.write(pathName, fileContent, StandardCharsets.UTF_8);
                         Directories.set(thread_number[1], current);
                     }
                     case ("5") -> {
@@ -856,6 +860,9 @@ class Connection extends Thread {
                             String[] lista = fileData.list();
                             out.writeUTF(currentLocalPath);
                             String fileInd = in.readUTF();
+                            if(fileInd.equals("-1")){
+                                break;
+                            }
                             Integer fileIndex = Integer.parseInt(fileInd);
 
                             System.out.println("A carregar o ficheiro: " + lista[fileIndex].toString());
@@ -876,6 +883,9 @@ class Connection extends Thread {
                             String[] lista = fileData.list();
                             out.writeUTF(currentPath + "\\" + "directories" + "\\" + current);
                             String fileInd = in.readUTF();
+                            if(fileInd.equals("-1")){
+                                break;
+                            }
                             Integer fileIndex = Integer.parseInt(fileInd);
 
                             System.out.println("A carregar o ficheiro: " + lista[fileIndex].toString());

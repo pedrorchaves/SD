@@ -410,28 +410,35 @@ public class TCPClient {
 												k++;
 											}
 										}
+										System.out.println((k+1) + ": Sair");
 										String currentDir = in.readUTF();
 										String fileInd = sc.nextLine();
-										Integer fileIndex = Integer.parseInt(fileInd);
-										out.writeUTF(Integer.toString(arrayInds[fileIndex]));
-
-										System.out.println("A descarregar o ficheiro: " + lista[arrayInds[fileIndex]].toString());
-										
-										Integer size = 100;
-										Socket socketDown = new Socket(args[0], 6969);
-										byte[] dataDown = new byte[size];
-
-										FileOutputStream fileOutput = new FileOutputStream(currentDir + "\\" + lista[arrayInds[fileIndex]].toString());
-										BufferedOutputStream buffOutput = new BufferedOutputStream(fileOutput);
-										DataInputStream inp = new DataInputStream(socketDown.getInputStream());
-										int atual = 0;
-										while((atual=inp.read(dataDown))!=-1){
-											buffOutput.write(dataDown, 0, atual);
+										Integer coiso = k+1;
+										if(fileInd.equals(coiso.toString())){
+											out.writeUTF("-1");
+											break;
 										}
-										buffOutput.flush();
-										socketDown.close();
-										System.out.println("Download do ficheiro completo!");
-
+										else{
+											Integer fileIndex = Integer.parseInt(fileInd);
+											out.writeUTF(Integer.toString(arrayInds[fileIndex]));
+	
+											System.out.println("A descarregar o ficheiro: " + lista[arrayInds[fileIndex]].toString());
+											
+											Integer size = 100;
+											Socket socketDown = new Socket(args[0], 6969);
+											byte[] dataDown = new byte[size];
+	
+											FileOutputStream fileOutput = new FileOutputStream(currentDir + "\\" + lista[arrayInds[fileIndex]].toString());
+											BufferedOutputStream buffOutput = new BufferedOutputStream(fileOutput);
+											DataInputStream inp = new DataInputStream(socketDown.getInputStream());
+											int atual = 0;
+											while((atual=inp.read(dataDown))!=-1){
+												buffOutput.write(dataDown, 0, atual);
+											}
+											buffOutput.flush();
+											socketDown.close();
+											System.out.println("Download do ficheiro completo!");
+										}
 									}
 								}
 								case("8") -> {
@@ -452,44 +459,53 @@ public class TCPClient {
 												k++;
 											}
 										}
+										System.out.println((k+1) + ": Sair");
 										String currentDir = in.readUTF(); //pasta server
 										String fileInd = sc.nextLine();
-										Integer fileIndex = Integer.parseInt(fileInd);
-										out.writeUTF(Integer.toString(arrayInds[fileIndex]));
-
-										System.out.println("A carregar o ficheiro: " + lista[arrayInds[fileIndex]].toString());
-										
-										Integer size = 100;
-										Socket socketup = new Socket(args[0], 4200);
-										
-
-										FileInputStream fileInput = new FileInputStream(data + "\\" + lista[arrayInds[fileIndex]].toString());
-										BufferedInputStream buffInput = new BufferedInputStream(fileInput);
-
-										DataOutputStream out1 = new DataOutputStream(socketup.getOutputStream());
-										long atual = 0;
-										byte[] data1;
-										
-										File file = new File(data + "\\" + lista[arrayInds[fileIndex]].toString());
-										long fileSize = file.length();
-										
-										while(atual != fileSize){
-											if(fileSize - atual >= size){
-												atual+=size;
-											}
-											else{
-												size = (int)(fileSize-atual);
-												atual = fileSize;
-											}
-
-											data1 = new byte[size];
-											buffInput.read(data1,0,size);
-											out1.write(data1);
-										
+										Integer coiso = k+1;
+										if(fileInd.equals(coiso.toString())){
+											out.writeUTF("-1");
+											break;
 										}
-										out.flush();
-										socketup.close();
-										System.out.println("Upload do ficheiro completo!");
+										else{
+											Integer fileIndex = Integer.parseInt(fileInd);
+											out.writeUTF(Integer.toString(arrayInds[fileIndex]));
+	
+											System.out.println("A carregar o ficheiro: " + lista[arrayInds[fileIndex]].toString());
+											
+											Integer size = 100;
+											Socket socketup = new Socket(args[0], 4200);
+											
+	
+											FileInputStream fileInput = new FileInputStream(data + "\\" + lista[arrayInds[fileIndex]].toString());
+											BufferedInputStream buffInput = new BufferedInputStream(fileInput);
+	
+											DataOutputStream out1 = new DataOutputStream(socketup.getOutputStream());
+											long atual = 0;
+											byte[] data1;
+											
+											File file = new File(data + "\\" + lista[arrayInds[fileIndex]].toString());
+											long fileSize = file.length();
+											
+											while(atual != fileSize){
+												if(fileSize - atual >= size){
+													atual+=size;
+												}
+												else{
+													size = (int)(fileSize-atual);
+													atual = fileSize;
+												}
+	
+												data1 = new byte[size];
+												buffInput.read(data1,0,size);
+												out1.write(data1);
+											
+											}
+											out.flush();
+											socketup.close();
+											System.out.println("Upload do ficheiro completo!");
+										}
+										
 
 									}
 								}
