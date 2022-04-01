@@ -2,12 +2,11 @@
 
 // TCPServer2.java: Multithreaded server
 
-import java.lang.Object;
+
 import java.net.*;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
-import java.nio.file.StandardOpenOption;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.Scanner;
@@ -16,10 +15,10 @@ import java.rmi.*;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.*;
-import javax.xml.namespace.QName;
 
 public class TCPServer extends UnicastRemoteObject implements Admin, Runnable {
-    UDPServer[] getPings = new UDPServer[2];
+    static UDPServer getPings;
+    static UDPServer getPings1;
     private static int TCPserverPort = 6001;
     private static int TCPserverPortPrim = 6000;
     private static int RMIserverPort = 6970;
@@ -29,10 +28,11 @@ public class TCPServer extends UnicastRemoteObject implements Admin, Runnable {
 
     private static final int bufsize = 4096;
     private static int maxfailedrounds = 5;
+    private static int troca = 0;
     private static int timeout = 5000;
     private static int period = 1000;
     private static int port = 4200;
-    private static int flag = -1;
+    private static int flag = 1;
 
     private static String hostname;
 
@@ -95,6 +95,11 @@ public class TCPServer extends UnicastRemoteObject implements Admin, Runnable {
         out += "\nTempo entre pings máximo: " + Integer.toString(time);
         maxfailedrounds = n;
         timeout = time;
+        troca = 1;
+        getPings.setMFR(maxfailedrounds);
+        getPings.setTimeout(timeout);
+        getPings1.setMFR(maxfailedrounds);
+        getPings1.setTimeout(timeout);
         return out;
     }
 
@@ -179,7 +184,9 @@ public class TCPServer extends UnicastRemoteObject implements Admin, Runnable {
         
         hostname = args[0];
 
-        int count = 1;
+        int temp = 5;
+        int temp1 = 5;
+        int temp2 = 1;
         try (DatagramSocket ds = new DatagramSocket()) {
             InetAddress ia = InetAddress.getByName(hostname);
             ds.setSoTimeout(timeout);
@@ -187,10 +194,10 @@ public class TCPServer extends UnicastRemoteObject implements Admin, Runnable {
             try {
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
                 DataOutputStream dos = new DataOutputStream(baos);
-                dos.writeInt(count++);
+                dos.writeInt(maxfailedrounds);
                 byte [] buf = baos.toByteArray();
                 
-                DatagramPacket dp = new DatagramPacket(buf, buf.length, ia, port);                
+                DatagramPacket dp = new DatagramPacket(buf, buf.length, ia, UDPserverPortPrimer);                
                 ds.send(dp);
                 
                 byte [] rbuf = new byte[bufsize];
@@ -202,21 +209,44 @@ public class TCPServer extends UnicastRemoteObject implements Admin, Runnable {
                 DataInputStream dis = new DataInputStream(bais);
                 int n = dis.readInt();
                 //System.out.println("Got: " + n + ".");
+                temp = n;
+
+                ByteArrayOutputStream baos1 = new ByteArrayOutputStream();
+                DataOutputStream dos1 = new DataOutputStream(baos1);
+                dos1.writeInt(timeout);
+                byte [] buf1 = baos1.toByteArray();
+                
+                DatagramPacket dp1 = new DatagramPacket(buf1, buf1.length, ia, UDPserverPortPrimer);                
+                ds.send(dp1);
+                
+                byte [] rbuf1 = new byte[bufsize];
+                DatagramPacket dr1 = new DatagramPacket(rbuf1, rbuf1.length);
+
+                ds.receive(dr1);
+                ByteArrayInputStream bais1 = new ByteArrayInputStream(rbuf1, 0, dr1.getLength());
+                DataInputStream dis1 = new DataInputStream(bais1);
+                int n1 = dis1.readInt();
+                //System.out.println("Got: " + n + ".");
+                temp1 = n1;
+
             }
             catch (SocketTimeoutException ste) {
                 failedheartbeats++;
-                System.out.println("Teste: " + failedheartbeats);
+                //System.out.println("Teste: " + failedheartbeats);
             } catch (IOException e) {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
             }
             if(failedheartbeats == 1){
                 port = UDPserverPortPrimer;
-                System.out.println("Servidor primario não existe");
+                //System.out.println("Servidor não existe");
                 flag = 0;
             }else{
                 port = UDPserverPortSec;
-                System.out.println("Servidor primario existe");
+                flag = 1;
+                maxfailedrounds = temp;
+                timeout = temp1;
+                //System.out.println("Servidor primario existe");
             }
         } catch (SocketException e1) {
             // TODO Auto-generated catch block
@@ -225,7 +255,80 @@ public class TCPServer extends UnicastRemoteObject implements Admin, Runnable {
             // TODO Auto-generated catch block
             e1.printStackTrace();
         }
+        if(flag != 1){
+            try (DatagramSocket ds = new DatagramSocket()) {
+                InetAddress ia = InetAddress.getByName(hostname);
+                ds.setSoTimeout(timeout);
+                int failedheartbeats = 0;
+                try {
+                    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                    DataOutputStream dos = new DataOutputStream(baos);
+                    dos.writeInt(maxfailedrounds);
+                    byte [] buf = baos.toByteArray();
+                    
+                    DatagramPacket dp = new DatagramPacket(buf, buf.length, ia, UDPserverPortSec);                
+                    ds.send(dp);
+                    
+                    byte [] rbuf = new byte[bufsize];
+                    DatagramPacket dr = new DatagramPacket(rbuf, rbuf.length);
+    
+                    ds.receive(dr);
+                    failedheartbeats = 0;
+                    ByteArrayInputStream bais = new ByteArrayInputStream(rbuf, 0, dr.getLength());
+                    DataInputStream dis = new DataInputStream(bais);
+                    int n = dis.readInt();
+                    //System.out.println("Got: " + n + ".");
+                    temp = n;
 
+
+                    ByteArrayOutputStream baos1 = new ByteArrayOutputStream();
+                    DataOutputStream dos1 = new DataOutputStream(baos1);
+                    dos1.writeInt(timeout);
+                    byte [] buf1 = baos1.toByteArray();
+                    
+                    DatagramPacket dp1 = new DatagramPacket(buf1, buf1.length, ia, UDPserverPortSec);                
+                    ds.send(dp1);
+                    
+                    byte [] rbuf1 = new byte[bufsize];
+                    DatagramPacket dr1 = new DatagramPacket(rbuf1, rbuf1.length);
+
+                    ds.receive(dr1);
+                    failedheartbeats = 0;
+                    ByteArrayInputStream bais1 = new ByteArrayInputStream(rbuf1, 0, dr1.getLength());
+                    DataInputStream dis1 = new DataInputStream(bais1);
+                    int n1 = dis1.readInt();
+                    //System.out.println("Got: " + n + ".");
+                    temp1 = n1;
+
+                }
+                catch (SocketTimeoutException ste) {
+                    failedheartbeats++;
+                    System.out.println("Teste: " + failedheartbeats);
+                } catch (IOException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
+                if(failedheartbeats == 1){
+                    port = UDPserverPortPrimer;
+                    System.out.println("Servidor não existe");
+                    flag = 0;
+                }else{
+                    port = UDPserverPortSec;
+                    flag = 1;
+                    maxfailedrounds = temp;
+                    timeout = temp1;
+                    System.out.println("Servidor primario existe");
+                }
+            } catch (SocketException e1) {
+                // TODO Auto-generated catch block
+                e1.printStackTrace();
+            } catch (UnknownHostException e1) {
+                // TODO Auto-generated catch block
+                e1.printStackTrace();
+            }
+        }
+        
+        
         for(int i = 0;i<2;i++){
             TCPServer TCPandUDP = new TCPServer();
             Thread thread = new Thread(TCPandUDP);
@@ -242,7 +345,7 @@ public class TCPServer extends UnicastRemoteObject implements Admin, Runnable {
         int numero = 0;
         thread_count++;
 
-        if(thread_count == 1){ //tcp
+        if(thread_count == 2){ //tcp
             //rmi
             if(flag == 0){
                 RMIserverPort = RMIserverPortPrim;
@@ -255,12 +358,11 @@ public class TCPServer extends UnicastRemoteObject implements Admin, Runnable {
                 r.rebind("admin", h);
                 System.out.println("Servidor de RMI á espera.");
             } catch (RemoteException re) {
-                System.out.println("Exceção em TCPServer.run: " + re);
+                System.out.println("Exceção em Server.run: " + re);
             }
             //TCP
 
             try (ServerSocket listenSocket = new ServerSocket(TCPserverPort)) {
-                System.out.println("A escuta no porto 6000");
                 System.out.println("LISTEN SOCKET=" + listenSocket);
                 while (true) {
                     Socket clientSocket = listenSocket.accept(); // BLOQUEANTE
@@ -273,29 +375,57 @@ public class TCPServer extends UnicastRemoteObject implements Admin, Runnable {
                 System.out.println("A ouvir:" + e.getMessage());
             }
             
-        }else if(thread_count == 2){ //udp
+        }else if(thread_count == 1){ //udp
             //criar 3 threads, 1 para receber pings e 1 para enviar e 1 para enviar copias de ficheiros
-            for(int i = 0;i<2;i++){
-                getPings[i] = new UDPServer();
+            /*for(int i = 0;i<2;i++){
+                getPings[i] = new UDPServer(port, UDPserverPortPrimer, UDPserverPortSec, timeout, maxfailedrounds, flag);
                 Thread thread = new Thread(getPings[i]);
                 getPings[i].setPort(port);
                 thread.start();
-            }
+            }*/
+            
+       
+
+            getPings = new UDPServer(port, UDPserverPortPrimer, UDPserverPortSec, timeout, maxfailedrounds, flag, troca);
+            Thread thread = new Thread(getPings);
+            getPings.setPort(port);
+            thread.start();
+
+            getPings1 = new UDPServer(port, UDPserverPortPrimer, UDPserverPortSec, timeout, maxfailedrounds, flag, troca);
+            Thread thread1 = new Thread(getPings1);
+            getPings1.setPort(port);
+            thread1.start();
         }
         
     }
 }
 class UDPServer implements Runnable{
-    private int primerPort = 4200;
+    private int primerPort;
     private static final int bufsize = 4096;
 
-    private  int secundPort = 4201;
-    private int maxfailedrounds = 5;
-    private int timeout = 5000;
+    private  int secundPort;
+    private int maxfailedrounds;
+    private int troca;
+    private int timeout;
     private int period = 1000;
     private int port;
     private static int thread_number = 0;
+    private static int flag;
+    private static int first = 0;
 
+    public UDPServer(int port, int primerPort, int secundPort, int timeout,int maxfailedrounds,int flag, int troca){
+        this.port = port;
+        this.primerPort = primerPort;
+        this.secundPort = secundPort;
+        this.timeout = timeout;
+        this.maxfailedrounds = maxfailedrounds;
+        this.flag = flag;
+        this.troca = troca;
+    }
+
+    public int getPort(){
+        return port;
+    }
     public void setPort(int port){
         this.port = port;
     }
@@ -304,6 +434,9 @@ class UDPServer implements Runnable{
     }
     public void setMFR(int maxfailedrounds){
         this.maxfailedrounds = maxfailedrounds;
+    }
+    public void setTroca(int troca){
+        this.troca = troca;
     }
     public void setPrimerPort(int primerPort){
         this.primerPort = primerPort;
@@ -329,10 +462,27 @@ class UDPServer implements Runnable{
     
                     ByteArrayOutputStream baos = new ByteArrayOutputStream();
                     DataOutputStream dos = new DataOutputStream(baos);
-                    dos.writeInt(countS);
+                    dos.writeInt(maxfailedrounds);
                     byte resp[] = baos.toByteArray();
                     DatagramPacket dpresp = new DatagramPacket(resp, resp.length, dp.getAddress(), dp.getPort());
                     ds.send(dpresp);
+
+
+                    byte buf1[] = new byte[bufsize];
+                    DatagramPacket dp1 = new DatagramPacket(buf1, buf1.length);
+                    ds.receive(dp1);
+                    ByteArrayInputStream bais1 = new ByteArrayInputStream(buf1, 0, dp1.getLength());
+                    DataInputStream dis1 = new DataInputStream(bais1);
+                    int countS1 = dis1.readInt();
+    
+                    ByteArrayOutputStream baos1 = new ByteArrayOutputStream();
+                    DataOutputStream dos1 = new DataOutputStream(baos1);
+                    dos1.writeInt(timeout);
+                    byte resp1[] = baos1.toByteArray();
+                    DatagramPacket dpresp1 = new DatagramPacket(resp1, resp1.length, dp1.getAddress(), dp1.getPort());
+                    ds.send(dpresp1);
+                    
+                    
                 }
             } catch (IOException e) {
                 // TODO Auto-generated catch block
@@ -366,6 +516,34 @@ class UDPServer implements Runnable{
                         ByteArrayInputStream bais = new ByteArrayInputStream(rbuf, 0, dr.getLength());
                         DataInputStream dis = new DataInputStream(bais);
                         int n = dis.readInt();
+
+
+
+                        ByteArrayOutputStream baos1 = new ByteArrayOutputStream();
+                        DataOutputStream dos1 = new DataOutputStream(baos1);
+                        dos1.writeInt(count++);
+                        byte [] buf1 = baos1.toByteArray();
+                        
+                        DatagramPacket dp1 = new DatagramPacket(buf1, buf1.length, ia, port);                
+                        ds.send(dp1);
+                        
+                        byte [] rbuf1 = new byte[bufsize];
+                        DatagramPacket dr1 = new DatagramPacket(rbuf1, rbuf1.length);
+    
+                        ds.receive(dr1);
+                        failedheartbeats = 0;
+                        ByteArrayInputStream bais1 = new ByteArrayInputStream(rbuf1, 0, dr1.getLength());
+                        DataInputStream dis1 = new DataInputStream(bais1);
+                        int n1 = dis1.readInt();
+
+                        if(troca == 1){
+                            System.out.println("Trocar timeout: " + timeout);
+                            timeout = n1;
+                            System.out.println("Trocar maxfailedrounds: " + maxfailedrounds);
+                            maxfailedrounds = n;
+                            troca = 0;
+                        }
+
                         //System.out.println("Got: " + n + ".");
                     }
                     catch (IOException ste) {

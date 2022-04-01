@@ -5,10 +5,6 @@ import java.rmi.registry.LocateRegistry;
 import java.util.*;
 import java.net.*;
 import java.net.UnknownHostException;
-import java.util.*;
-
-import javax.sound.sampled.SourceDataLine;
-
 import java.io.*;
 
 public class TCPClient {
@@ -181,13 +177,13 @@ public class TCPClient {
 				// 1o passo - criar socket
 				try (Socket s = new Socket(args[0], TCPserverPort)) {
 					//System.out.println("SOCKET=" + s);
-					System.out.println("Conectado ao servidor!\n");
 					checkBoth = 0;
 
 					// 2o passo
 					DataInputStream in = new DataInputStream(s.getInputStream());
 					DataOutputStream out = new DataOutputStream(s.getOutputStream());
-
+					
+					System.out.println("Conectado ao servidor!\n");
 					// READ user and password FROM KEYBOARD
 					while (true) {
 						if(move == 0){

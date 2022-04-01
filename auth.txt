@@ -5,3 +5,4 @@ fabio 453 r r 5 5 5 5
 joao 321 r r 2 2 2 2
 duarte 123 2 2 2 2 2 2
 samuel 566 r a 4 4 4 4
+mendes 123 r r 12 r 12 12
