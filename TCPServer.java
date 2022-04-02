@@ -657,9 +657,8 @@ class Connection extends Thread {
         try (Scanner readFile = new Scanner(dirs)) {
             while (readFile.hasNextLine()) {
                 String Line = readFile.nextLine();
-                String[] arrayLine = Line.split(" ");
+                String[] arrayLine = Line.split("  -- ");
                 directories.add(arrayLine[1]);
-
             }
         } catch (FileNotFoundException e) {
             System.out.println("Ficheiro Errado");
@@ -771,7 +770,13 @@ class Connection extends Thread {
         ReadFromFileAuth(FileName, Users, Usernames);
         ReadFromFile("dir.txt", Directories);
         String currentPath = System.getProperty("user.dir");
-        String currentLocalPath = System.getProperty("user.dir");
+        String currentLocalPath = "";
+        try {
+            currentLocalPath = in.readUTF();
+        } catch (IOException e1) {
+            // TODO Auto-generated catch block
+            e1.printStackTrace();
+        }
         String resposta;
         // Pre-Authentication
         try {
@@ -992,12 +997,12 @@ class Connection extends Thread {
                             out.writeUTF("0");
                         }
                         List<String> fileContent = new ArrayList<>(Files.readAllLines(pathName, StandardCharsets.UTF_8));
-                        fileContent.set(thread_number[1], Usernames.get(thread_number[1]) + " " + current);
+                        fileContent.set(thread_number[1], Usernames.get(thread_number[1]) + "  -- " + current);
                         Files.write(pathName, fileContent, StandardCharsets.UTF_8);
                         Directories.set(thread_number[1], current);
                     }
                     case ("5") -> {
-                        currentLocalPath = in.readUTF();
+                        out.writeUTF(currentLocalPath);
                     }
                     case ("6") -> {
                         File file = new File(currentLocalPath);
@@ -1043,7 +1048,7 @@ class Connection extends Thread {
                             } else {
                                 out.writeUTF("-1");
                             }
-                        } else {
+                        } else if(newPathIndex < directories.length && newPathIndex > 0){
                             StringBuilder str = new StringBuilder(currentLocalPath);
                             str.append("\\");
                             str.append(directories[newPathIndex]);
@@ -1070,7 +1075,7 @@ class Connection extends Thread {
 
                             System.out.println("A carregar o ficheiro: " + lista[fileIndex].toString());
                             File ficheiro = new File(currentPath + "\\" + "directories" + "\\" + current + "\\" + lista[fileIndex].toString());
-                            String work = downloadFiles(ficheiro , 6969, 100, "localhost");
+                            String work = downloadFiles(ficheiro , 7000, 100, "localhost");
                             System.out.println(work);
                         }
                     }
@@ -1093,7 +1098,7 @@ class Connection extends Thread {
 
                             System.out.println("A carregar o ficheiro: " + lista[fileIndex].toString());
                             String ficheiro = currentPath + "\\" + "directories" + "\\" + current + "\\" + lista[fileIndex].toString();
-                            String work = uploadFiles(ficheiro , 4200, 100, "localhost");
+                            String work = uploadFiles(ficheiro , 7001, 100, "localhost");
                             System.out.println(work);
                         }
                     }

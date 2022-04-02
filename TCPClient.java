@@ -205,6 +205,7 @@ public class TCPClient {
 					}
 					
 					System.out.println("Conectado ao servidor!\n");
+					out.writeUTF(System.getProperty("user.dir"));
 				
 					// READ user and password FROM KEYBOARD
 					while (true) {
@@ -373,18 +374,12 @@ public class TCPClient {
 									}
 								}
 								case ("5") -> {
-									String data = System.getProperty("user.dir");
-									out.writeUTF(data);
+									String data = in.readUTF();
 									File fileData = new File(data);
-									if (data.equals("-1")) {
-										System.out.println("\nNao estas autenticado!");
-									} else {
-										String[] lista = fileData.list();
-										System.out.println("Ficheiros na diretoria:");
-										for (String ficheiro : lista) {
-											System.out.println(ficheiro);
-										}
-
+									String[] lista = fileData.list();
+									System.out.println("Ficheiros na diretoria:");
+									for (String ficheiro : lista) {
+										System.out.println(ficheiro);
 									}
 								}
 								case ("6") -> {
@@ -451,7 +446,7 @@ public class TCPClient {
 											System.out.println("A descarregar o ficheiro: " + lista[arrayInds[fileIndex]].toString());
 											
 											Integer size = 100;
-											Socket socketDown = new Socket(args[0], 6969);
+											Socket socketDown = new Socket(args[0], 7000);
 											byte[] dataDown = new byte[size];
 	
 											FileOutputStream fileOutput = new FileOutputStream(currentDir + "\\" + lista[arrayInds[fileIndex]].toString());
@@ -491,7 +486,7 @@ public class TCPClient {
 										Integer coiso = k+1;
 										if(fileInd.equals(coiso.toString())){
 											out.writeUTF("-1");
-											break;
+											continue;
 										}
 										else{
 											Integer fileIndex = Integer.parseInt(fileInd);
@@ -500,7 +495,7 @@ public class TCPClient {
 											System.out.println("A carregar o ficheiro: " + lista[arrayInds[fileIndex]].toString());
 											
 											Integer size = 100;
-											Socket socketup = new Socket(args[0], 4200);
+											Socket socketup = new Socket(args[0], 7001);
 											
 	
 											FileInputStream fileInput = new FileInputStream(data + "\\" + lista[arrayInds[fileIndex]].toString());
