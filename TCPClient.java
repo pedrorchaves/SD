@@ -13,6 +13,7 @@ public class TCPClient {
 	private static int move = 0;
 	private static int checkBoth = 0;
 	private static int checkBothRMI = 0;
+	static int flag;
 
 	public static void main(String args[]) throws NotBoundException, UnknownHostException {
 		Scanner sca = new Scanner(System.in);
@@ -137,7 +138,7 @@ public class TCPClient {
 										for (int i = 0; i < Usernames.size(); i++) {
 											out += admin.memory_print(Usernames, i);
 										}
-										System.out.println(String.format("Os utilizadores tem %,d  bytes usados!", out));
+										System.out.println(String.format("Os utilizadores teem %,d  bytes usados!", out));
 									}
 								}
 							}
@@ -182,8 +183,29 @@ public class TCPClient {
 					// 2o passo
 					DataInputStream in = new DataInputStream(s.getInputStream());
 					DataOutputStream out = new DataOutputStream(s.getOutputStream());
+					if(flag == 0){
+						flag = in.readInt();
+					}
+					if(flag == 1){
+						if(TCPserverPort == 6000){
+							TCPserverPort = 6001;
+							RMIserverPort = 6970;
+
+						}
+						else if(TCPserverPort == 6001){
+							TCPserverPort = 6000;
+							RMIserverPort = 6969;
+						}
+						flag = 2;
+						continue;
+					}
+					if(flag==2){
+						in.readInt();
+						flag = 3;
+					}
 					
 					System.out.println("Conectado ao servidor!\n");
+				
 					// READ user and password FROM KEYBOARD
 					while (true) {
 						if(move == 0){
@@ -251,15 +273,23 @@ public class TCPClient {
 											System.out.println("\nPassword mudou!");
 											break;
 										}
+										
 
 										// DISPLAY WHAT WAS READ
-										System.out.println(data);
+										
+										if (data.equals("1")){
+											System.out.println("\nFalha a mudar a password.\nPor favor tente de novo.\n");
+											
+										}
+										else{
+											System.out.println(data);
+											// READ STRING FROM KEYBOARD
+											String newPass = sc.nextLine();
 
-										// READ STRING FROM KEYBOARD
-										String newPass = sc.nextLine();
-
-										// WRITE password
-										out.writeUTF(newPass);
+											// WRITE password
+											out.writeUTF(newPass);
+										}
+										
 									}
 									break;
 								} /*

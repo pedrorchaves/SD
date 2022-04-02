@@ -33,6 +33,7 @@ public class TCPServer extends UnicastRemoteObject implements Admin, Runnable {
     private static int period = 1000;
     private static int port = 4200;
     private static int flag = 1;
+    private static int ipFix = 0;
 
     private static String hostname;
 
@@ -238,6 +239,7 @@ public class TCPServer extends UnicastRemoteObject implements Admin, Runnable {
                 e.printStackTrace();
             }
             if(failedheartbeats == 1){
+                ipFix = 1;
                 port = UDPserverPortPrimer;
                 //System.out.println("Servidor não existe");
                 flag = 0;
@@ -313,7 +315,7 @@ public class TCPServer extends UnicastRemoteObject implements Admin, Runnable {
                     System.out.println("Servidor não existe");
                     flag = 0;
                 }else{
-                    port = UDPserverPortSec;
+                    port = UDPserverPortPrimer;
                     flag = 1;
                     maxfailedrounds = temp;
                     timeout = temp1;
@@ -347,10 +349,12 @@ public class TCPServer extends UnicastRemoteObject implements Admin, Runnable {
 
         if(thread_count == 2){ //tcp
             //rmi
-            if(flag == 0){
+            if(ipFix == 1){
+                ipFix = 0;
                 RMIserverPort = RMIserverPortPrim;
                 TCPserverPort = TCPserverPortPrim;
             }
+            
             //System.out.println("RMI");
             try {
                 Admin h = new TCPServer();
@@ -369,7 +373,7 @@ public class TCPServer extends UnicastRemoteObject implements Admin, Runnable {
                     System.out.println("CLIENT_SOCKET (created at accept())=" + clientSocket);
                     numero++;
                     new Connection(listenSocket, TCPserverPort, clientSocket, numero, Usernames, Users, OnlineUsers,
-                            Directories);
+                            Directories,flag,getPings);
                 }
             } catch (IOException e) {
                 System.out.println("A ouvir:" + e.getMessage());
@@ -394,7 +398,9 @@ public class TCPServer extends UnicastRemoteObject implements Admin, Runnable {
             getPings1 = new UDPServer(port, UDPserverPortPrimer, UDPserverPortSec, timeout, maxfailedrounds, flag, troca);
             Thread thread1 = new Thread(getPings1);
             getPings1.setPort(port);
+        
             thread1.start();
+            flag = getPings.getFlag();
         }
         
     }
@@ -423,6 +429,9 @@ class UDPServer implements Runnable{
         this.troca = troca;
     }
 
+    public int getFlag(){
+        return this.flag;
+    }
     public int getPort(){
         return port;
     }
@@ -551,7 +560,9 @@ class UDPServer implements Runnable{
                         System.out.println("Pings falhados: " + failedheartbeats);
                     }
                     Thread.sleep(period);
+
                 }
+                flag = 0;
             } catch (SocketException e) {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
@@ -581,18 +592,22 @@ class Connection extends Thread {
     Socket clientSocket;
     ServerSocket listenSocket;
     int serverPort;
+    int flag;
+    UDPServer getPings;
     static String username;
     int[] thread_number = new int[2];
 
     public Connection(ServerSocket listenSocketa, int aserverPort, Socket aClientSocket, int numero,
             ArrayList<String> Users,
             ArrayList<String> Usernames,
-            ArrayList<String> OnlineUsers, ArrayList<String> Directories) {
+            ArrayList<String> OnlineUsers, ArrayList<String> Directories, int flag, UDPServer getPings) {
         thread_number[0] = numero;
+        this.getPings = getPings;
         this.Users = Users;
         this.Usernames = Usernames;
         this.OnlineUsers = OnlineUsers;
         this.Directories = Directories;
+        this.flag = flag;
         try {
             listenSocket = listenSocketa;
             clientSocket = aClientSocket;
@@ -745,6 +760,13 @@ class Connection extends Thread {
     }
     // =============================
     public synchronized void run() {
+        flag = getPings.getFlag();
+        try {
+            out.writeInt(flag);
+        } catch (IOException e1) {
+            // TODO Auto-generated catch block
+            e1.printStackTrace();
+        }
 
         ReadFromFileAuth(FileName, Users, Usernames);
         ReadFromFile("dir.txt", Directories);
@@ -824,6 +846,9 @@ class Connection extends Thread {
                                 ReadFromFileAuth(FileName, Users, Usernames);
                                 out.writeUTF("0");
                                 break;
+                            }
+                            else{
+                                out.writeUTF("1");
                             }
                         }
                         break;
@@ -1090,6 +1115,7 @@ class Connection extends Thread {
             System.out.println("Utilizador[" + Usernames.get(thread_number[1]) + "] saiu, usou CTRL + C");
             OnlineUsers.remove(Usernames.get(thread_number[1]));
         } catch (IOException e) {
+            
             System.out.println("Utilizador[" + Usernames.get(thread_number[1])
                     + "] saiu\nMay the force be with you!\n");
             OnlineUsers.remove(Usernames.get(thread_number[1]));
